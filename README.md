@@ -1,6 +1,21 @@
 # xxToolbelt
 
-
+- [xxToolbelt](#xxtoolbelt)
+- [Description](#description)
+- [Pros](#pros)
+- [Cons](#cons)
+- [Installation](#installation)
+- [Uninstall](#uninstall)
+- [Usage](#usage)
+    - [Modifying scripts](#modifying-scripts)
+    - [Adding new scripts](#adding-new-scripts)
+  - [Adding new languages](#adding-new-languages)
+  - [Change default script editor](#change-default-script-editor)
+  - [Change scripts folder](#change-scripts-folder)
+  - [Private scripts](#private-scripts)
+  - [Change script scanning depth](#change-script-scanning-depth)
+- [Compatability](#compatability)
+- [Roadmap](#roadmap)
 
 # Description
 The base for a simple system for creating aliases/scripts/tools in various programming and scripting languages. Like aliases but on steroids. The main goal is to kill the giant rc files that a lot of us use and to offer a nice replacement.
@@ -30,6 +45,7 @@ XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.scripts/"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
 XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "java" "rs" "ps1" "pwsh" "rb" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" )
+XXTOOLBELT_PRIVATE_KEYWORD=".private"
 function xxtoolbelt-load () {
 	while IFS= read -r -d '' file; do
 		filename=$(basename -- "$file")
@@ -37,8 +53,10 @@ function xxtoolbelt-load () {
 		filename="${filename%.*}"
 		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[@]} " =~ " ${extension} " ]]; then
 			if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
+			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
 			alias "$filename"="$file"
 			alias "xxedit-$filename"="$XXTOOLBELT_SCRIPTS_EDITOR $file"
+			echo "New alias: $filename(.$extension) to $file"
 		fi
 	done < <(find "$XXTOOLBELT_SCRIPTS_FOLDER" -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
 }
@@ -84,6 +102,8 @@ xxtoolbelt-load
 ## Change scripts folder
 1. Edit **XXTOOLBELT_SCRIPTS_FOLDER** in your RC file.
 
+## Private scripts
+If you have any sensitive information in your scripts and use git, you can add **".private"** before the script extension to ignore it for the git repository. Example **xxmyscript.sh -> xxmyscript.private.sh**. This will not affect the command, you will still call it with xxmyscript.
 ## Change script scanning depth
 1. By default it is 2 levels. You can edit XXTOOLBELT_SCANNING_DEPTH in your RC file.
 
