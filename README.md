@@ -30,6 +30,7 @@ The base for a simple system for creating aliases/scripts/tools in various progr
 - Works really well with interpreted languages;
 - You can use centralized requirements for all your toolbelt - ex. Python requirements.txt.
 - Portability;
+- Easy version control;
 
 # Cons
 - Must maintain a lot of separate files instead of one big rc;
@@ -41,33 +42,20 @@ Pretty straightforward:
 1. In your **~/.bashrc** or **~/.zshrc** or whatever rc file you use paste (prefably in the end of the file):
 ```bash
 # START xxToolbelt
-XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.scripts/"
+XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
+XXTOOLBELT_VERSION="1.4"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
-XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "java" "rs" "ps1" "pwsh" "rb" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" )
+XXTOOLBELT_DEBUG_MODE=0
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
-function xxtoolbelt-load () {
-	while IFS= read -r -d '' file; do
-		filename=$(basename -- "$file")
-		extension="${filename##*.}"
-		filename="${filename%.*}"
-		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[@]} " =~ " ${extension} " ]]; then
-			if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
-			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
-			alias "$filename"="$file"
-			alias "xxedit-$filename"="$XXTOOLBELT_SCRIPTS_EDITOR $file"
-			echo "New alias: $filename(.$extension) to $file"
-		fi
-	done < <(find "$XXTOOLBELT_SCRIPTS_FOLDER" -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
-}
-xxtoolbelt-load
+XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "erl" "hrl" "exs" "java" "rs" "ps1" "pwsh" "rb" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" )
+source "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
 # END xxToolbelt
 ```
-2. Clone the scripts folder from the repository to your home directory (or wherever you want). Example:
+1. Clone (or symlink) the repository folder to your home directory (or wherever you want). Example:
 ```bash
 git clone https://github.com/thereisnotime/xxToolbelt
-cd xxToolbelt
-cp -r ./scripts ~/.scripts
+cp -r ./xxToolbelt ~/.xxtoolbelt
 ```
 3. Reload your terminal.
 
@@ -92,9 +80,9 @@ This will open your code editor (by default VSCode)
 xxtoolbelt-load
 ```
 ## Adding new languages
-1. Create the appropriate folder in **/.scripts/**
+1. Create the appropriate folder in **/.xxtoolbelt/scripts**
 2. Whitelist its extension in your RC file in the **XXTOOLBELT_SCRIPTS_WHITELIST** array.
-3. Make sure that the shebang you are using works (bash ./yourscript.yourlanguage).
+3. Make sure that the shebang you are using works (test with bash ./yourscript.yourlanguage).
    
 ## Change default script editor
 1. Edit **XXTOOLBELT_SCRIPTS_EDITOR** in your RC file.
