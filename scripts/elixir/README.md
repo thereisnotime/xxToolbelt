@@ -1,0 +1,4 @@
+# Requirements
+elixir
+escript
+erlang
