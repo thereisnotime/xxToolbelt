@@ -18,7 +18,7 @@
 #### Configuration
 #####################################
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.5"
+XXTOOLBELT_VERSION="1.7"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
 XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
@@ -201,7 +201,7 @@ function xxtb-show-import-script-menu () {
 function xxtb-update () {
 	update_url="https://raw.githubusercontent.com/thereisnotime/xxToolbelt/main/xxtoolbelt.sh"
 	if [ -x "$(command -v curl)" ]; then
-		curl "$update_url" -O "$XXTOOLBELT_SCRIPTS_FOLDER/../"
+		curl -o "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh" "$update_url" 
 	else
 		if [ -x "$(command -v wget)" ]; then
 			wget "$update_url" -O "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
