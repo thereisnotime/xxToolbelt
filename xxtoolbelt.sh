@@ -25,7 +25,7 @@ XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
 XXTOOLBELT_DEBUG_MODE=$(if [[ -f  $XXTOOLBELT_DEBUG_FLAG ]]; then echo 1; else echo 0; fi)
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
 XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "erl" "hrl" "exs" "java" "rs" "ps1" "pwsh" "rb" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" )
-XXTOOLBELT_MAIN_FILE=$(readlink -f "$0")
+XXTOOLBELT_MAIN_FILE="$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
 XXTOOLBELT_LOADED_SCRIPTS=0
 
 #####################################
@@ -173,12 +173,7 @@ function xxtb () {
 			esac
 }
 function xxtb-reload () {
-	# TODO: Fix this quick hack.
-	if [[ "$1" == "cli" ]]; then 
-		source "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"; 
-		else
-		source "$XXTOOLBELT_MAIN_FILE"
-	fi
+	source "$XXTOOLBELT_MAIN_FILE"
 }
 function xxtb-show-import-script-menu () {
 	clear
@@ -201,10 +196,10 @@ function xxtb-show-import-script-menu () {
 function xxtb-update () {
 	update_url="https://raw.githubusercontent.com/thereisnotime/xxToolbelt/main/xxtoolbelt.sh"
 	if [ -x "$(command -v curl)" ]; then
-		curl -o "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh" "$update_url" 
+		curl -o "$XXTOOLBELT_MAIN_FILE" "$update_url" 
 	else
 		if [ -x "$(command -v wget)" ]; then
-			wget "$update_url" -O "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
+			wget "$update_url" -O "$XXTOOLBELT_MAIN_FILE"
 		else
 			xxtb_log "You need curl or wget for this." "ERROR"
 			return 1
