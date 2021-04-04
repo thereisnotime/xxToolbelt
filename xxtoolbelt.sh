@@ -18,7 +18,7 @@
 #### Configuration
 #####################################
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.8"
+XXTOOLBELT_VERSION="1.9"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
 XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
@@ -118,6 +118,10 @@ function xxtb () {
 				echo -ne "-${bred}d${nc}, --${bred}debug${nc}                       toggle debug mode\n"
 				echo -ne "-${bred}s${nc}, --${bred}scripts${nc}                     open scripts folder\n"
 				echo -ne "-${bred}u${nc}, --${bred}update${nc}                      update xxToolbelt\n"
+				return 0
+				;;
+			-v|--version)
+				echo "xxToolbelt $XXTOOLBELT_VERSION"
 				return 0
 				;;
 			-u|--update)
