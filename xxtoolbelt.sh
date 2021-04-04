@@ -173,8 +173,12 @@ function xxtb () {
 			esac
 }
 function xxtb-reload () {
-	if [[ "$1" == "cli" ]]; then source "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"; fi
-	source "$XXTOOLBELT_MAIN_FILE"
+	# TODO: Fix this quick hack.
+	if [[ "$1" == "cli" ]]; then 
+		source "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"; 
+		else
+		source "$XXTOOLBELT_MAIN_FILE"
+	fi
 }
 function xxtb-show-import-script-menu () {
 	clear
