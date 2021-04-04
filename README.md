@@ -5,10 +5,13 @@
 - [Pros](#pros)
 - [Cons](#cons)
 - [Installation](#installation)
+  - [Manual install](#manual-install)
+  - [Install with git](#install-with-git)
+  - [Install with wget](#install-with-wget)
 - [Uninstall](#uninstall)
 - [Usage](#usage)
-    - [Modifying scripts](#modifying-scripts)
-    - [Adding new scripts](#adding-new-scripts)
+  - [Modifying scripts](#modifying-scripts)
+  - [Adding new scripts](#adding-new-scripts)
   - [Adding new languages](#adding-new-languages)
   - [Change default script editor](#change-default-script-editor)
   - [Change scripts folder](#change-scripts-folder)
@@ -38,18 +41,11 @@ The base for a simple system for creating aliases/scripts/tools in various progr
 
 
 # Installation
-Pretty straightforward:
+## Manual install
 1. In your **~/.bashrc** or **~/.zshrc** or whatever rc file you use paste (prefably in the end of the file):
 ```bash
 # START xxToolbelt
-XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.4"
-XXTOOLBELT_SCRIPTS_EDITOR="code"
-XXTOOLBELT_SCANNING_DEPTH="3"
-XXTOOLBELT_DEBUG_MODE=0
-XXTOOLBELT_PRIVATE_KEYWORD=".private"
-XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "erl" "hrl" "exs" "java" "rs" "ps1" "pwsh" "rb" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" )
-source "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
+source "$HOME/.xxtoobelt/xxtoolbelt.sh"
 # END xxToolbelt
 ```
 1. Clone (or symlink) the repository folder to your home directory (or wherever you want). Example:
@@ -59,13 +55,22 @@ cp -r ./xxToolbelt ~/.xxtoolbelt
 ```
 3. Reload your terminal.
 
+## Install with git
+```
+cd /tmp; git clone https://github.com/thereisnotime/xxToolbelt && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && $SHELL "$HOME/.$(ps -p $$ -ocomm=)rc" && echo "xxToolbelt was installed. Try 'xxtb'"
+```
+
+## Install with wget
+```
+wget --no-check-certificate -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && $SHELL "$HOME/.$(ps -p $$ -ocomm=)rc" && echo "xxToolbelt was installed. Try 'xxtb'"
+```
 
 # Uninstall
 1. Remove the lines from your rc file.
 2. (optional) Remove the folder for your scripts.
 # Usage
-
-### Modifying scripts
+The main configuration is located in xxtoobelt.sh
+## Modifying scripts
 1. For example if your script's name is xxtemplate-py.py type:
 ```bash
 xxedit-xxtemplate-py
@@ -73,14 +78,14 @@ xxedit-xxtemplate-py
 This will open your code editor (by default VSCode)
 2. Save the file - that's all - no need to reload anything.
 
-### Adding new scripts
+## Adding new scripts
 1. Add the new script with the proper extension to the correct language folder (or create one). **It is recommended using the templates and have the requirements (README.md in the language folder)** because the shebang is importnat.
 2. Reload your shell or open a new terminal or type:
 ```bash
-xxtoolbelt-load
+xxtb-load
 ```
 ## Adding new languages
-1. Create the appropriate folder in **/.xxtoolbelt/scripts**
+1. Create the appropriate folder in **/.xxtoolbelt/scripts/**
 2. Whitelist its extension in your RC file in the **XXTOOLBELT_SCRIPTS_WHITELIST** array.
 3. Make sure that the shebang you are using works (test with bash ./yourscript.yourlanguage).
    
@@ -93,7 +98,7 @@ xxtoolbelt-load
 ## Private scripts
 If you have any sensitive information in your scripts and use git, you can add **".private"** before the script extension to ignore it for the git repository. Example **xxmyscript.sh -> xxmyscript.private.sh**. This will not affect the command, you will still call it with xxmyscript.
 ## Change script scanning depth
-1. By default it is 2 levels. You can edit XXTOOLBELT_SCANNING_DEPTH in your RC file.
+1. By default it is 2 levels. You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
 
 # Compatability
 Should work fine with all POSIX compliant shells (and some of the not fully compliant ones). Tested with:
