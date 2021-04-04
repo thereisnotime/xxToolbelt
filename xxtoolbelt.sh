@@ -18,7 +18,7 @@
 #### Configuration
 #####################################
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.7"
+XXTOOLBELT_VERSION="1.8"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
 XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
@@ -121,7 +121,7 @@ function xxtb () {
 				return 0
 				;;
 			-u|--update)
-				xxtb-update "cli"
+				xxtb-update
 				return 0
 				;;
 			-s|--scripts)
@@ -179,8 +179,7 @@ function xxtb-show-import-script-menu () {
 	clear
 	echo -ne "\nPaste command: "
 	read -r EXPORTED
-	string='My long string'
-	if ! [[ $string == *"XXTBIMPORT"* ]]; then
+	if ! [[ $EXPORTED == *"XXTBIMPORT"* ]]; then
 		xxtb_log "This does not seem like an import command." "ERROR"
 		return 1
 	fi
