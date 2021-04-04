@@ -121,7 +121,7 @@ function xxtb () {
 				return 0
 				;;
 			-u|--update)
-				xxtb-update
+				xxtb-update "cli"
 				return 0
 				;;
 			-s|--scripts)
