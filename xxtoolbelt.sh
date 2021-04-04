@@ -173,7 +173,7 @@ function xxtb () {
 			esac
 }
 function xxtb-reload () {
-	if [[ "$1" != "silent" ]]; then xxtb_log "Reloading main script from $XXTOOLBELT_MAIN_FILE" "INFO"; fi
+	if [[ "$1" != "cli" ]]; then source "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"; fi
 	source "$XXTOOLBELT_MAIN_FILE"
 }
 function xxtb-show-import-script-menu () {
