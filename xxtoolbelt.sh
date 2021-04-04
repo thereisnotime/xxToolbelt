@@ -14,7 +14,7 @@
 #### Configuration
 #####################################
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.4"
+XXTOOLBELT_VERSION="1.5"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
 XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
@@ -73,15 +73,16 @@ __  ____  _|_   _|__   ___ | | |__   ___| | |_
 ${nc}\n"
 }
 function xxtb_print_menu () {
-	echo -ne "${bcyan}======= version$XXTOOLBELT_VERSION =======${nc}
+	echo -ne "${bcyan}======= version $XXTOOLBELT_VERSION =======${nc}
 ${bwhite}
 1) Open scripts folder
 2) List loaded scripts ($XXTOOLBELT_LOADED_SCRIPTS)
-3) Reload xxToolbelt 
-4) Toggle DEBUG mode (dbg:$XXTOOLBELT_DEBUG_MODE)
-5) Export script (from file)
-6) Export script (from command)
-7) Import script
+3) Export script (from command)
+4) Export script (from file)
+5) Import script
+6) Reload xxToolbelt
+7) Toggle DEBUG mode (dbg:$XXTOOLBELT_DEBUG_MODE)
+8) Update xxToolbelt
 0) Exit
 *) 
 ${nc}
@@ -89,12 +90,13 @@ ${bcyan}===============================${nc}"
 }
 function xxtb_back_menu () {
 	tput civis
-	xxtb_log "\n\n${fwhite}<--- Press any key to go back to the menu.${nc}" "INFO"
-	read -r -s -n 1
+	xxtb_log "\n\n${fwhite}<--- Press ENTER to go back to the menu.${nc}" "INFO"
+	read -r -s
 	echo
 	clear
 	xxtb
 }
+
 #####################################
 #### Main
 #####################################
@@ -105,12 +107,14 @@ function xxtb () {
 			echo -ne "\nYour choice: "
 			read -r a
 			case $a in
-				1) xdg-open "$XXTOOLBELT_SCRIPTS_FOLDER"; clear; xxtb;;
-				2) clear; xxtb-list-scripts ; xxtb_back_menu ;;
-				3) clear; xxtb-reload ; xxtb ;;
-				4) clear; xxtb-toggle-debug ; xxtb ;;
+				1) xdg-open "$XXTOOLBELT_SCRIPTS_FOLDER" ; clear; xxtb ;;
+				2) clear ; xxtb-list-scripts ; xxtb_back_menu ;;
+				3) clear ; xxtb-show-command-export-menu ; xxtb ;;
+				4) xxtb_log "Not yet implemented" "ERROR" ; xxtb ;;
 				5) all_checks ; xxtb ;;
-				6) clear; xxtb-show-command-export-menu;	 xxtb;;
+				6) clear ; xxtb-reload ; xxtb ;;
+				7) clear ; xxtb-toggle-debug ; xxtb ;;
+				8) xxtb-update ;;
 			0) return 0 ;;
 			*) clear; xxtb_log "No such option." "ERROR"; xxtb
 			esac
@@ -119,17 +123,35 @@ function xxtb-reload () {
 	if [[ "$1" != "silent" ]]; then xxtb_log "Reloading main script from $XXTOOLBELT_MAIN_FILE" "INFO"; fi
 	source "$XXTOOLBELT_MAIN_FILE"
 }
-function xxtb-export-script () {
-	true
+function xxtb-show-import-script-menu () {
+	echo -ne "\nEnter command of the script: "
+	read -r EXPORTED
+
+}
+function xxtb-update () {
+	update_url="https://raw.githubusercontent.com/thereisnotime/xxToolbelt/main/xxtoolbelt.sh"
+	if [ -x "$(command -v curl)" ]; then
+		curl "$update_url" -O "$XXTOOLBELT_SCRIPTS_FOLDER/../"
+	else
+		if [ -x "$(command -v wget)" ]; then
+			wget "$update_url" -O "$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
+		else
+			xxtb_log "You need curl or wget for this." "ERROR"
+			return 1
+		fi
+	fi
+	clear
+	xxtb-reload
+	xtb
 }
 function xxtb-show-command-export-menu () {
 	# TODO: Fine tune the find command.
 	xxtb-list-scripts
 	echo -ne "\nEnter command of the script: "
-	read -r VARNAME
+	read -r SCRIPTNAME
 	# TODO: Check if exists.
 	# TODO: Improve file/folder management.
-	file_path=$(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$VARNAME.*")
+	file_path=$(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$SCRIPTNAME.*")
 	if ! [ -f "$file_path" ]; then
 		xxtb_log "No such script was found." "ERROR"
 		xxtb_back_menu
