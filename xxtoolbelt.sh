@@ -10,6 +10,7 @@
 # TODO: Add option to open scripts from the menu.
 # TODO: Fix placement of info log to be under the menu, not above.
 # TODO: Add mechanism to prevent same naming of scripts in different languages.
+# TODO: Remove eval's.
 #####################################
 #### Configuration
 #####################################
@@ -124,8 +125,9 @@ function xxtb-reload () {
 	source "$XXTOOLBELT_MAIN_FILE"
 }
 function xxtb-show-import-script-menu () {
-	echo -ne "\nEnter command of the script: "
+	echo -ne "\nEnter command: "
 	read -r EXPORTED
+	eval "$EXPORTED"
 
 }
 function xxtb-update () {
