@@ -4,6 +4,7 @@
 # shellcheck disable=2034
 # shellcheck disable=1090
 # shellcheck disable=2120
+# shellcheck disable=2181
 # TODO: Remove WET code.
 # TODO: Add indication for private scripts when listing.
 # TODO: Add option to import script module from url.
@@ -11,6 +12,8 @@
 # TODO: Fix placement of info log to be under the menu, not above.
 # TODO: Add mechanism to prevent same naming of scripts in different languages.
 # TODO: Remove eval's.
+# TODO: Replace all import/exports mechanisms with JSON objects.
+# TODO: Fix hack for dirty exit loops.
 #####################################
 #### Configuration
 #####################################
@@ -79,8 +82,8 @@ ${bwhite}
 1) Open scripts folder
 2) List loaded scripts ($XXTOOLBELT_LOADED_SCRIPTS)
 3) Export script (from command)
-4) Export script (from file)
-5) Import script
+4) Import script
+5) Show CLI options
 6) Reload xxToolbelt
 7) Toggle DEBUG mode (dbg:$XXTOOLBELT_DEBUG_MODE)
 8) Update xxToolbelt
@@ -93,7 +96,6 @@ function xxtb_back_menu () {
 	tput civis
 	xxtb_log "\n\n${fwhite}<--- Press ENTER to go back to the menu.${nc}" "INFO"
 	read -r -s
-	echo
 	clear
 	xxtb
 }
@@ -102,21 +104,71 @@ function xxtb_back_menu () {
 #### Main
 #####################################
 function xxtb () {
+	while test $# -gt 0; do
+	# TODO: Add second argument for exporting for new function name.
+		case "$1" in
+			-h|--help)
+				echo -ne "${bcyan}==== xxToolbelt v$XXTOOLBELT_VERSION commands:${nc}\n\n"
+				echo -ne "xxtb ${bred}[options]${nc} ${bblue}[arguments]${nc}\n\n"
+				echo -ne "${bcyan}options:${nc}\n"
+				echo -ne "-${bred}h${nc}, --${bred}help${nc}                        show command help\n"
+				echo -ne "-${bred}e${nc} ${bblue}COMMAND${nc}, --${bred}export${nc}=${bblue}COMMAND${nc}      specify a command to export\n"
+				echo -ne "-${bred}r${nc}, --${bred}reload${nc}                      reload xxToolbelt\n"
+				echo -ne "-${bred}ls${nc}, --${bred}list${nc}                       list all loaded scripts\n"
+				echo -ne "-${bred}d${nc}, --${bred}debug${nc}                       toggle debug mode\n"
+				echo -ne "-${bred}s${nc}, --${bred}scripts${nc}                     open scripts folder\n"
+				echo -ne "-${bred}u${nc}, --${bred}update${nc}                      update xxToolbelt\n"
+				return 0
+				;;
+			-u|--update)
+				xxtb-update
+				return 0
+				;;
+			-s|--scripts)
+				xxtb-open-folder
+				return 0
+				;;
+			-d|--debug)
+				xxtb-toggle-debug
+				return 0
+				;;
+			-ls|--list)
+				xxtb-list-scripts
+				return 0
+				;;
+			-r|--reload)
+				xxtb-reload
+				return 0
+				;;
+			-e)
+				xxtb-export "$2"
+				return 0
+				;;
+			--export=*)
+				xxtb-export "$( echo "$1" | cut -d "=" -f2)"
+				return 0
+				;;
+			*)
+				xxtb_log "No such option. Try help with xxtb --help" "ERROR"
+				return 1
+		esac
+	done
+
 	tput cnorm
 	xxtb_print_logo
 	xxtb_print_menu
 			echo -ne "\nYour choice: "
 			read -r a
 			case $a in
-				1) xdg-open "$XXTOOLBELT_SCRIPTS_FOLDER" ; clear; xxtb ;;
+				1) xxtb-open-folder ; clear; xxtb ;;
 				2) clear ; xxtb-list-scripts ; xxtb_back_menu ;;
 				3) clear ; xxtb-show-command-export-menu ; xxtb ;;
-				4) xxtb_log "Not yet implemented" "ERROR" ; xxtb ;;
-				5) all_checks ; xxtb ;;
+				4) xxtb-show-import-script-menu ; xxtb ;;
+				5) clear ; xxtb -h ; xxtb_back_menu ; xxtb ;;
 				6) clear ; xxtb-reload ; xxtb ;;
 				7) clear ; xxtb-toggle-debug ; xxtb ;;
-				8) xxtb-update ;;
-			0) return 0 ;;
+				8) clear ; xxtb-update ;;
+			0) kill $$ ;;
 			*) clear; xxtb_log "No such option." "ERROR"; xxtb
 			esac
 }
@@ -125,10 +177,22 @@ function xxtb-reload () {
 	source "$XXTOOLBELT_MAIN_FILE"
 }
 function xxtb-show-import-script-menu () {
-	echo -ne "\nEnter command: "
+	clear
+	echo -ne "\nPaste command: "
 	read -r EXPORTED
+	string='My long string'
+	if ! [[ $string == *"XXTBIMPORT"* ]]; then
+		xxtb_log "This does not seem like an import command." "ERROR"
+		return 1
+	fi
+	# TODO: Fix this quick hack.
+	import_command=$(echo "$EXPORTED" | grep -m 1 -o -P '(?<=XXTBIMPORT=).*(?=; mkdir)' )
 	eval "$EXPORTED"
-
+	if [ $? -eq 0 ]; then
+		xxtb_log "Import successfull. Give it a try: $import_command" "INFO"
+	else
+		xxtb_log "Error while importing." "ERROR"
+	fi
 }
 function xxtb-update () {
 	update_url="https://raw.githubusercontent.com/thereisnotime/xxToolbelt/main/xxtoolbelt.sh"
@@ -142,23 +206,18 @@ function xxtb-update () {
 			return 1
 		fi
 	fi
-	clear
 	xxtb-reload
-	xtb
 }
-function xxtb-show-command-export-menu () {
-	# TODO: Fine tune the find command.
-	xxtb-list-scripts
-	echo -ne "\nEnter command of the script: "
-	read -r SCRIPTNAME
-	# TODO: Check if exists.
-	# TODO: Improve file/folder management.
-	file_path=$(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$SCRIPTNAME.*")
+function xxtb-open-folder () {
+	xdg-open "$XXTOOLBELT_SCRIPTS_FOLDER" 
+}
+function xxtb-export () {
+	script_name="$1"
+	file_path=$(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$script_name.*")
 	if ! [ -f "$file_path" ]; then
-		xxtb_log "No such script was found." "ERROR"
-		xxtb_back_menu
+		xxtb_log "No such script was found: $script_name" "ERROR"
+		return 1
 	fi 
-	clear
 	file_name=$(basename -- "$file_path")
 	file_extension="${file_name##*.}"
 	file_name="${file_name%.*}"
@@ -166,7 +225,16 @@ function xxtb-show-command-export-menu () {
 	file_folder=${file_path//$XXTOOLBELT_SCRIPTS_FOLDER}
 	file_folder=${file_folder//$file_name.$file_extension}
 	file_command=${file_name//$XXTOOLBELT_PRIVATE_KEYWORD}
-	xxtb_log "To import the script use: \n\nmkdir -r \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" &>/dev/null; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-load;" "INFO"
+	xxtb_log "To import the script use (paste in terminal or in the Import menu): \n\nXXTBIMPORT=$file_command; mkdir -r \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" &>/dev/null; if [[ -f \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\" ]]; then echo \"ERROR. File already exists.\"; fi; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-load;" "INFO"
+}
+function xxtb-show-command-export-menu () {
+	# TODO: Fine tune the find command.
+	xxtb-list-scripts
+	echo -ne "\nEnter command of the script: "
+	read -r SCRIPTNAME
+	clear
+	# TODO: Improve file/folder management.
+	xxtb-export "$SCRIPTNAME"
 	xxtb_back_menu
 }
 function xxtb-toggle-debug () {
@@ -196,6 +264,7 @@ function xxtb-list-scripts () {
 	xxtb_log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
 }
 function xxtb-load () {
+	# TODO: Add different color for different extensions.
 	XXTOOLBELT_LOADED_SCRIPTS=0
 	while IFS= read -r -d '' file; do
 		filename=$(basename -- "$file")
@@ -215,3 +284,4 @@ function xxtb-load () {
 	if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then xxtb_log "Loaded $XXTOOLBELT_LOADED_SCRIPTS scripts." "DEBUG"; fi
 }
 xxtb-load
+
