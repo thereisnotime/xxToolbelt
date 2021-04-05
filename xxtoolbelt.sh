@@ -88,7 +88,6 @@ ${bwhite}
 7) Toggle DEBUG mode (dbg:$XXTOOLBELT_DEBUG_MODE)
 8) Update xxToolbelt
 0) Exit
-*) 
 ${nc}
 ${bcyan}===============================${nc}"
 }
@@ -177,6 +176,7 @@ function xxtb () {
 			esac
 }
 function xxtb-reload () {
+	xxtb_log "xxToolbox v$XXTOOLBELT_VERSION" "INFO"
 	source "$XXTOOLBELT_MAIN_FILE"
 }
 function xxtb-show-import-script-menu () {
