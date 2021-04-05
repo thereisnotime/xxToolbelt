@@ -2,6 +2,8 @@
 
 - [xxToolbelt](#xxtoolbelt)
 - [Description](#description)
+    - [TUI](#tui)
+    - [CLI](#cli)
 - [Pros](#pros)
 - [Cons](#cons)
 - [Installation](#installation)
@@ -23,6 +25,19 @@
 # Description
 The base for a simple system for creating aliases/scripts/tools in various programming and scripting languages. Like aliases but on steroids. The main goal is to kill the giant rc files that a lot of us use and to offer a nice replacement.
 
+### TUI
+You can view TUI with:
+```
+xxtb
+```
+![TUI](img/tui.png "TUI")
+
+### CLI
+You can view CLI with:
+```
+xxtb -h
+```
+![CLI](img/cli.png "CLI")
 
 # Pros
 - Dynamic reloading without the need to reload the shell;

@@ -14,6 +14,7 @@
 # TODO: Remove eval's.
 # TODO: Replace all import/exports mechanisms with JSON objects.
 # TODO: Fix hack for dirty exit loops.
+# TODO: Add nice search mechanism.
 #####################################
 #### Configuration
 #####################################
