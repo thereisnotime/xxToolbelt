@@ -2,15 +2,16 @@
 
 ## Description
 
-The xxToolbelt is a simple yet powerful system for creating aliases, scripts, and tools in various programming and scripting languages. It aims to provide a cleaner and more efficient alternative to the traditional giant rc files that many of us rely on. This tool allows you to manage your custom commands and scripts effortlessly, making your development workflow more streamlined and organized.
+The xxToolbelt is a simple yet powerful system for creating aliases, scripts, and tools in various programming and scripting languages. It aims to provide a cleaner and more efficient alternative to the traditional giant rc files that many of us rely on. This tool allows you to manage your custom commands and scripts effortlessly, making your development workflow more streamlined and organized. Remember when you had to write this small script that does X and then you forgot about it? With the xxToolbelt, you can easily manage and share your scripts with others.
 
 Some of the key features of the xxToolbelt include:
 
-- No reloading of the shell required when adding or modifying scripts (after the initial setup).
-- Support for multiple programming and scripting languages (not limited to bash).
-- Easy to extend and customize.
-- Mechanism to share snippets with others.
-- Adaptability to different shells (bash, zsh, fish, etc.).
+- **No reloading of the shell** required when adding or modifying scripts (after the initial setup).
+- **Support for multiple programming and scripting languages** (not limited to bash).
+- **Easy to extend** and customize.
+- Mechanism to **share snippets** with others.
+- Adaptability to **different shells** (bash, zsh, fish, etc.).
+- **Centralized requirements** for all your tools/scripts (e.g., Python requirements.txt).
 
 ## Table of Contents
 
@@ -58,6 +59,7 @@ Some of the key features of the xxToolbelt include:
     - [V](#v)
   - [Compatability](#compatability)
   - [Roadmap](#roadmap)
+  - [Acknowledgements](#acknowledgements)
 
 ### TUI
 
@@ -67,17 +69,17 @@ You can view TUI with:
 xxtb
 ```
 
-![TUI](img/tui.png "TUI")
+![TUI](assets/tui.png "TUI")
 
 ### CLI
 
-You can view CLI with:
+You can view CLI help with:
 
 ```bash
 xxtb -h
 ```
 
-![CLI](img/cli.png "CLI")
+![CLI](assets/cli.png "CLI")
 
 ## Pros
 
@@ -164,6 +166,7 @@ xxtb-load
 1. Create the appropriate folder in **/.xxtoolbelt/scripts/**
 2. Whitelist its extension in your RC file in the **XXTOOLBELT_SCRIPTS_WHITELIST** array.
 3. Make sure that the shebang you are using works (test with bash ./yourscript.yourlanguage).
+4. Reload your shell or open a new terminal.
 
 ### Change default script editor
 
@@ -276,11 +279,27 @@ Should work fine with all POSIX compliant shells (and some of the not fully comp
 
 ## Roadmap
 
-- [x] Create oneliner for the installation.
-- [x] Create templates for even more languages.
+- [x] Create oneliner for the installation of xxToolbelt.
+- [ ] Add Julia.
+- [ ] Add Kotlin.
+- [ ] Add Haskell.
+- [ ] Add Swift.
+- [ ] Add Nim.
+- [ ] Add Fortran.
+- [ ] Add COBOL.
+- [ ] Add Clojure.
+- [ ] Add Scala.
+- [ ] Add Dart.
+- [ ] Add Delphi.
 - [ ] Create dependency examples where they are missing.
-- [ ] Test on macOS and BSD.
+- [ ] Test on macOS.
+- [ ] Test on BSD.
 - [ ] Add support for PowerShell Core.
 - [ ] Implement architecture that allows easy installation of "script modules" from git repositories by URL.
 - [ ] Create a management menu for managing installed scripts.
 - [x] Create a mechanism for easily exchanging scripts with peers.
+
+## Acknowledgements
+
+- GitHub [gitignore](https://github.com/github/gitignore)
+- 
