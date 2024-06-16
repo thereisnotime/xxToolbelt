@@ -13,21 +13,35 @@
 # TODO: Add option to open scripts from the menu.
 # TODO: Fix placement of info log to be under the menu, not above.
 # TODO: Add mechanism to prevent same naming of scripts in different languages.
-# TODO: Remove eval's.
+# TODO: Remove eval's as they are not safe.
+# TODO: Add option to export scripts to URLs.
 # TODO: Replace all import/exports mechanisms with JSON objects.
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
+# TODO: Add fzf for faster selection of scripts when exporting.
+_SCRIPT_VERSION="1.9.5"
+_SCRIPT_NAME="xxTB"
+
 #####################################
 #### Configuration
 #####################################
-XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.9.4"
+# NOTE: The editor to open the scripts with when using the xxtbedit alias.
 XXTOOLBELT_SCRIPTS_EDITOR="code"
+# NOTE The folder where the scripts are located.
+XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
+# NOTE: The depth of the scanning for scripts in the scripts folder.
 XXTOOLBELT_SCANNING_DEPTH="3"
+# NOTE: Add the extensions of the scripts you want to load.
+XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "erl" "hrl" "exs" "java" "rs" "ps1" "pwsh" "rb" "lua" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" "ts" "janet" "zig" "v" )
+# NOTE: The time format can be "short" or "long".
+XXTOOLBELT_TIME_FORMAT="short"
+
+#####################################
+#### Constants
+#####################################
 XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
 XXTOOLBELT_DEBUG_MODE=$(if [[ -f  $XXTOOLBELT_DEBUG_FLAG ]]; then echo 1; else echo 0; fi)
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
-XXTOOLBELT_SCRIPTS_WHITELIST=( "py" "sh" "erl" "hrl" "exs" "java" "rs" "ps1" "pwsh" "rb" "lua" "cpp" "c" "pl" "groovy" "d" "go" "js" "php" "r" "cs" "ts" "janet" "zig" "v" )
 XXTOOLBELT_MAIN_FILE="$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
 XXTOOLBELT_LOADED_SCRIPTS=0
 
@@ -51,26 +65,48 @@ bpurple='\e[1;35m'      # Purple
 bcyan='\e[1;36m'        # Cyan
 bwhite='\e[1;37m'       # White
 nc="\e[m"               # Color Reset
-function xxtb_log () {
-	prefix="[XXTB]"
-	case $2 in
-		"ERROR") 
-			echo -en "${fred}$prefix""[ERROR]: $1${nc}\n"
-			;;
-		"INFO") 
-			echo -en "${fgreen}$prefix""[INFO]: $1${nc}\n"
-			;;
-		"WARNING") 
-			echo -en "${fyellow}$prefix""[WARNING]: $1${nc}\n"
-			;;
-		"DEBUG") 
-			echo -en "${fblue}$prefix""[DEBUG]: $1${nc}\n"
-			;;
-		*)
-			echo -en "${fpurple}$prefix""[UNKNOWN]: $1${nc}\n"
-	esac
+function log() {
+    local _message="$1"
+    local _level="$2"
+    local _nl="\n"
+	local _timestamp
+	# check format
+	if [ "$XXTOOLBELT_TIME_FORMAT" == "short" ]; then
+		_timestamp=$(date +%H:%M:%S)
+	else
+		_timestamp=$(date +%d.%m.%Y-%d:%H:%M:%S-%Z)
+	fi
+    case $(echo "$_level" | tr '[:upper:]' '[:lower:]') in
+    "info" | "information")
+        echo -ne "${bwhite}[INFO][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}"
+        ;;
+    "warn" | "warning")
+        echo -ne "${byellow}[WARN][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}"
+        ;;
+    "err" | "error")
+        echo -ne "${bred}[ERR][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}"
+        ;;
+	"dbg" | "debug")
+		if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
+			echo -ne "${bcyan}[DEBUG][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}"
+		fi
+		;;
+    *)
+        echo -ne "${bblue}[UNKNOWN][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}"
+        ;;
+    esac
 }
-xxtb_print_logo () {
+function failure() {
+    local _lineno="$2"
+    local _fn="$3"
+    local _exitstatus="$4"
+    local _msg="$5"
+    local _lineno_fns="${1% 0}"
+    if [[ "$_lineno_fns" != "0" ]]; then _lineno="${_lineno} ${_lineno_fns}"; fi
+    log "Error in ${BASH_SOURCE[1]}:${_fn}[${_lineno}] Failed with status ${_exitstatus}: ${_msg}" "ERROR"
+}
+
+function xxtb_print_logo () {
 	echo -ne "\n${bcyan}
             _____           _ _          _ _   
 __  ____  _|_   _|__   ___ | | |__   ___| | |_ 
@@ -80,7 +116,7 @@ __  ____  _|_   _|__   ___ | | |__   ___| | |_
 ${nc}\n"
 }
 function xxtb_print_menu () {
-	echo -ne "${bcyan}======= version $XXTOOLBELT_VERSION =======${nc}
+	echo -ne "${bcyan}======= version $_SCRIPT_VERSION =======${nc}
 ${bwhite}
 1) Open scripts folder
 2) List loaded scripts ($XXTOOLBELT_LOADED_SCRIPTS)
@@ -96,21 +132,17 @@ ${bcyan}===============================${nc}"
 }
 function xxtb_back_menu () {
 	tput civis
-	xxtb_log "\n\n${fwhite}<--- Press ENTER to go back to the menu.${nc}" "INFO"
+	log "\n\n${fwhite}<--- Press ENTER to go back to the menu.${nc}" "INFO"
 	read -r -s
 	clear
 	xxtb
 }
-
-#####################################
-#### Main
-#####################################
 function xxtb () {
 	while test $# -gt 0; do
 	# TODO: Add second argument for exporting for new function name.
 		case "$1" in
 			-h|--help)
-				echo -ne "${bcyan}==== xxToolbelt v$XXTOOLBELT_VERSION commands:${nc}\n\n"
+				echo -ne "${bcyan}==== xxToolbelt v$_SCRIPT_VERSION commands:${nc}\n\n"
 				echo -ne "xxtb ${bred}[options]${nc} ${bblue}[arguments]${nc}\n\n"
 				echo -ne "${bcyan}options:${nc}\n"
 				echo -ne "-${bred}h${nc}, --${bred}help${nc}                        show command help\n"
@@ -123,7 +155,7 @@ function xxtb () {
 				return 0
 				;;
 			-v|--version)
-				echo "xxToolbelt $XXTOOLBELT_VERSION"
+				echo "xxToolbelt $_SCRIPT_VERSION"
 				return 0
 				;;
 			-u|--update)
@@ -155,7 +187,7 @@ function xxtb () {
 				return 0
 				;;
 			*)
-				xxtb_log "No such option. Try help with xxtb --help" "ERROR"
+				log "No such option. Try help with xxtb --help" "ERROR"
 				return 1
 		esac
 	done
@@ -175,11 +207,11 @@ function xxtb () {
 				7) clear ; xxtb-toggle-debug ; xxtb ;;
 				8) clear ; xxtb-update ;;
 			0) kill $$ ;;
-			*) clear; xxtb_log "No such option." "ERROR"; xxtb
+			*) clear; log "No such option." "ERROR"; xxtb
 			esac
 }
 function xxtb-reload () {
-	xxtb_log "xxToolbox v$XXTOOLBELT_VERSION" "INFO"
+	log "xxToolbelt v$_SCRIPT_VERSION" "INFO"
 	source "$XXTOOLBELT_MAIN_FILE"
 }
 function b-show-import-script-menu () {
@@ -187,16 +219,16 @@ function b-show-import-script-menu () {
 	echo -ne "\nPaste command: "
 	read -r EXPORTED
 	if ! [[ $EXPORTED == *"XXTBIMPORT"* ]]; then
-		xxtb_log "This does not seem like an import command." "ERROR"
+		log "This does not seem like an import command." "ERROR"
 		return 1
 	fi
 	# TODO: Fix this quick hack.
 	import_command=$(echo "$EXPORTED" | grep -m 1 -o -P '(?<=XXTBIMPORT=).*(?=; mkdir)' )
 	eval "$EXPORTED"
 	if [ $? -eq 0 ]; then
-		xxtb_log "Import successfull. Give it a try: $import_command" "INFO"
+		log "Import successfull. Give it a try: $import_command" "INFO"
 	else
-		xxtb_log "Error while importing." "ERROR"
+		log "Error while importing." "ERROR"
 	fi
 }
 function xxtb-update () {
@@ -207,7 +239,7 @@ function xxtb-update () {
 		if [ -x "$(command -v wget)" ]; then
 			wget "$update_url" -O "$XXTOOLBELT_MAIN_FILE"
 		else
-			xxtb_log "You need curl or wget for this." "ERROR"
+			log "You need curl or wget for this." "ERROR"
 			return 1
 		fi
 	fi
@@ -220,7 +252,7 @@ function xxtb-export () {
 	script_name="$1"
 	file_path=$(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$script_name.*")
 	if ! [ -f "$file_path" ]; then
-		xxtb_log "No such script was found: $script_name" "ERROR"
+		log "No such script was found: $script_name" "ERROR"
 		return 1
 	fi 
 	file_name=$(basename -- "$file_path")
@@ -230,7 +262,10 @@ function xxtb-export () {
 	file_folder=${file_path//$XXTOOLBELT_SCRIPTS_FOLDER}
 	file_folder=${file_folder//$file_name.$file_extension}
 	file_command=${file_name//$XXTOOLBELT_PRIVATE_KEYWORD}
-	xxtb_log "To import the script use (paste in terminal or in the Import menu): \n\nXXTBIMPORT=$file_command; mkdir -r \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" &>/dev/null; if [[ -f \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\" ]]; then echo \"ERROR. File already exists.\"; fi; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-load;" "INFO"
+	log "To import the script paste in terminal or in the xxTB import menu the following:\n" "INFO"
+	export_command=XXTBIMPORT="$file_command; mkdir -p \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" || true; if [[ -f \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\" ]]; then echo \"ERROR: File already exists.\"; fi; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-load;"
+	export_command=$(echo "$export_command" | tr -d '\n')
+	echo -ne "${bblue}$export_command${nc}\n"
 }
 function xxtb-show-command-export-menu () {
 	# TODO: Fine tune the find command.
@@ -246,11 +281,11 @@ function xxtb-toggle-debug () {
 	if [[ "$XXTOOLBELT_DEBUG_MODE" == 1 ]]; then
 		XXTOOLBELT_DEBUG_MODE=0
 		rm -f "$XXTOOLBELT_DEBUG_FLAG" &> /dev/null
-		xxtb_log "Debug mode set to OFF" "INFO"
+		log "Debug mode set to OFF" "INFO"
 	else
 		XXTOOLBELT_DEBUG_MODE=1
 		touch "$XXTOOLBELT_DEBUG_FLAG" &> /dev/null
-		xxtb_log "Debug mode set to ON" "INFO"
+		log "Debug mode set to ON" "INFO"
 	fi
 }
 function xxtb-list-scripts () {
@@ -262,13 +297,16 @@ function xxtb-list-scripts () {
 		filename="${filename%.*}"
 		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
 			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
-			xxtb_log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Edit: ${bwhite}xxtbedit-$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
+			log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Edit: ${bwhite}xxtbedit-$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
 	done < <(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
-	xxtb_log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
+	log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
 }
 function xxtb-load () {
+	# TODO: Find a way to handle errors in the script loading when nested in other scripts.
+	# set -eE -o functrace
+	trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND"' ERR
 	# TODO: Add different color for different extensions.
 	XXTOOLBELT_LOADED_SCRIPTS=0
 	while IFS= read -r -d '' file; do
@@ -281,12 +319,15 @@ function xxtb-load () {
 			alias "$filename"="$file"
 			alias "xxtbedit-$filename"="$XXTOOLBELT_SCRIPTS_EDITOR $file"
 			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then 
-				xxtb_log "Script added: $filename(.$extension) to $file" "DEBUG"
+				log "Script added: $filename(.$extension) to $file" "DEBUG"
 			fi
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
 	done < <(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
-	if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then xxtb_log "Loaded $XXTOOLBELT_LOADED_SCRIPTS scripts." "DEBUG"; fi
+	if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then log "Loaded $XXTOOLBELT_LOADED_SCRIPTS scripts." "DEBUG"; fi
 }
-xxtb-load
 
+#####################################
+#### Main
+#####################################
+xxtb-load

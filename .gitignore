@@ -4,3 +4,9 @@
 
 # Secrets
 .env
+
+# Debug Flag
+XXTOOLBELT_DEBUG_MODE
+
+# Logs
+xxtb.log
