@@ -1,3 +1,17 @@
+<p align="center"><img align="center" width="280" src="./assets/icon.png"/></p>
+<h3 align="center">Organize your scripts </h3>
+<hr>
+
+![GitHub License](https://img.shields.io/github/license/thereisnotime/xxToolbelt) ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/thereisnotime/xxToolbelt) [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
+
+<h3 align="center">🛠 Powered by Bash 🛠</h3>
+
+<p align="center">
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=bash,linux" />
+  </a>
+</p>
+
 # xxToolbelt
 
 ## ✨ Description
@@ -59,6 +73,8 @@ Some of the key features of the xxToolbelt include:
     - [V](#v)
   - [⚙️ Compatability](#️-compatability)
   - [🚀 Roadmap](#-roadmap)
+  - [🤝 Contribution](#-contribution)
+  - [� License](#-license)
   - [🙏 Acknowledgements](#-acknowledgements)
 
 ## 👍 Pros
@@ -307,6 +323,14 @@ Should work fine with all POSIX compliant shells (and some of the not fully comp
 - [ ] Add examples for .env secrets management for private scripts.
 - [ ] Create a management menu for managing installed scripts.
 - [x] Create a mechanism for easily exchanging scripts with peers.
+
+## 🤝 Contribution
+
+We welcome contributions to xxToolbelt! You can help by creating issues or submitting pull requests. If scripting isn't your thing, you can still support the project by testing it with different shells, terminals, and OS versions. If you have questions or need assistance, please open an issue in the repository.
+
+## 📜 License
+
+Check the [LICENSE](LICENSE) file for more information.
 
 ## 🙏 Acknowledgements
 
