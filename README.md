@@ -2,7 +2,7 @@
 <h3 align="center">Organize your scripts </h3>
 <hr>
 
-![GitHub License](https://img.shields.io/github/license/thereisnotime/xxToolbelt) ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/thereisnotime/xxToolbelt) [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges) ![Lint Bash](https://github.com/thereisnotime/xxToolbelt/actions/workflows/lint.yaml/badge.svg)](https://github.com/thereisnotime/xxToolbelt/actions/workflows/lint.yaml)
+![GitHub License](https://img.shields.io/github/license/thereisnotime/xxToolbelt) ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/thereisnotime/xxToolbelt) [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges) [![Lint Bash](https://github.com/thereisnotime/xxToolbelt/actions/workflows/lint.yaml/badge.svg)](https://github.com/thereisnotime/xxToolbelt/actions/workflows/lint.yaml)
 
 <h3 align="center">🛠 Powered by Bash 🛠</h3>
 
