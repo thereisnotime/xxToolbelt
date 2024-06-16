@@ -55,6 +55,7 @@ Some of the key features of the xxToolbelt include:
     - [TypeScript](#typescript)
     - [Janet](#janet)
     - [Zig](#zig)
+    - [V](#v)
   - [Compatability](#compatability)
   - [Roadmap](#roadmap)
 
@@ -261,6 +262,10 @@ Check the [Janet README](scripts/janet/README.md) for more information.
 ### Zig
 
 Check the [Zig README](scripts/zig/README.md) for more information.
+
+### V
+
+Check the [V README](scripts/v/README.md) for more information.
 
 ## Compatability
 
