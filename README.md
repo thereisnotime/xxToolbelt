@@ -54,6 +54,7 @@ Some of the key features of the xxToolbelt include:
     - [Bash](#bash)
     - [TypeScript](#typescript)
     - [Janet](#janet)
+    - [Zig](#zig)
   - [Compatability](#compatability)
   - [Roadmap](#roadmap)
 
@@ -256,6 +257,10 @@ Check the [TypeScript README](scripts/ts/README.md) for more information.
 ### Janet
 
 Check the [Janet README](scripts/janet/README.md) for more information.
+
+### Zig
+
+Check the [Zig README](scripts/zig/README.md) for more information.
 
 ## Compatability
 

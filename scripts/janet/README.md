@@ -6,7 +6,7 @@ Pre-requisites:
 
 - Janet
 
-I recommend using [asdf](https://asdf-vm.com/guide/getting-started.html) to manage your Janet versions. You can install Nodejs with asdf via:
+I recommend using [asdf](https://asdf-vm.com/guide/getting-started.html) to manage your Janet versions. You can install Janet with asdf via:
 
 ```bash
 # Install prerequisites
