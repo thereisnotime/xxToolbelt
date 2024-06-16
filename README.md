@@ -53,6 +53,7 @@ Some of the key features of the xxToolbelt include:
     - [Cpp](#cpp)
     - [Bash](#bash)
     - [TypeScript](#typescript)
+    - [Janet](#janet)
   - [Compatability](#compatability)
   - [Roadmap](#roadmap)
 
@@ -251,6 +252,10 @@ Check the [Bash README](scripts/bash/README.md) for more information.
 ### TypeScript
 
 Check the [TypeScript README](scripts/ts/README.md) for more information.
+
+### Janet
+
+Check the [Janet README](scripts/janet/README.md) for more information.
 
 ## Compatability
 
