@@ -52,6 +52,7 @@ Some of the key features of the xxToolbelt include:
     - [CSharp](#csharp)
     - [Cpp](#cpp)
     - [Bash](#bash)
+    - [TypeScript](#typescript)
   - [Compatability](#compatability)
   - [Roadmap](#roadmap)
 
@@ -246,6 +247,10 @@ Check the [Cpp README](scripts/cpp/README.md) for more information.
 ### Bash
 
 Check the [Bash README](scripts/bash/README.md) for more information.
+
+### TypeScript
+
+Check the [TypeScript README](scripts/ts/README.md) for more information.
 
 ## Compatability
 
