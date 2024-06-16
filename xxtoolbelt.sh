@@ -5,6 +5,8 @@
 # shellcheck disable=1090
 # shellcheck disable=2120
 # shellcheck disable=2181
+# shellcheck disable=SC2001
+# shellcheck disable=SC2002
 # TODO: Remove WET code.
 # TODO: Add indication for private scripts when listing.
 # TODO: Add option to import script module from url.
@@ -19,7 +21,7 @@
 #### Configuration
 #####################################
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
-XXTOOLBELT_VERSION="1.9.3"
+XXTOOLBELT_VERSION="1.9.4"
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 XXTOOLBELT_SCANNING_DEPTH="3"
 XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
