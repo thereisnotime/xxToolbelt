@@ -306,7 +306,7 @@ function xxtb-list-scripts () {
 function xxtb-load () {
 	# TODO: Find a way to handle errors in the script loading when nested in other scripts.
 	# set -eE -o functrace
-	trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND"' ERR
+	# trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND"' ERR
 	# TODO: Add different color for different extensions.
 	XXTOOLBELT_LOADED_SCRIPTS=0
 	while IFS= read -r -d '' file; do
