@@ -49,6 +49,8 @@ Some of the key features of the xxToolbelt include:
     - [Change scripts folder](#change-scripts-folder)
     - [Private scripts](#private-scripts)
     - [Change script scanning depth](#change-script-scanning-depth)
+  - [⚙️ Compatability](#️-compatability)
+  - [🚀 Roadmap](#-roadmap)
   - [🔍 Examples in Various Languages](#-examples-in-various-languages)
     - [Python](#python)
     - [Ruby](#ruby)
@@ -71,10 +73,8 @@ Some of the key features of the xxToolbelt include:
     - [Janet](#janet)
     - [Zig](#zig)
     - [V](#v)
-  - [⚙️ Compatability](#️-compatability)
-  - [🚀 Roadmap](#-roadmap)
   - [🤝 Contribution](#-contribution)
-  - [� License](#-license)
+  - [📜 License](#-license)
   - [🙏 Acknowledgements](#-acknowledgements)
 
 ## 👍 Pros
@@ -206,6 +206,37 @@ If you have any sensitive information in your scripts and use git, you can add *
 
 By default it is 2 levels (so you can use nested folders for your script's libraries). You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
 
+## ⚙️ Compatability
+
+Should work fine with all POSIX compliant shells (and some of the not fully compliant ones). Tested with:
+
+- Debian/Ubuntu/Arch/Manjaro
+- bash/zsh
+
+## 🚀 Roadmap
+
+- [x] Create oneliner for the installation of xxToolbelt.
+- [ ] Add Julia.
+- [ ] Add Kotlin.
+- [ ] Add Haskell.
+- [ ] Add Swift.
+- [ ] Add Nim.
+- [ ] Add Fortran.
+- [ ] Add COBOL.
+- [ ] Add Clojure.
+- [ ] Add Scala.
+- [ ] Add Dart.
+- [ ] Add Delphi.
+- [ ] Create dependency examples where they are missing.
+- [ ] Test on macOS.
+- [ ] Test on BSD.
+- [ ] Add support for PowerShell Core.
+- [ ] Implement architecture that allows easy installation of "script modules" from git repositories by URL.
+- [ ] Add examples for .env secrets management for private scripts.
+- [ ] Create a management menu for managing installed scripts.
+- [x] Create a mechanism for easily exchanging scripts with peers.
+
+
 ## 🔍 Examples in Various Languages
 
 Here you can find examples of scripts in various languages that you can use with the xxToolbelt:
@@ -293,36 +324,6 @@ Check the [Zig README](scripts/zig/README.md) for more information.
 ### V
 
 Check the [V README](scripts/v/README.md) for more information.
-
-## ⚙️ Compatability
-
-Should work fine with all POSIX compliant shells (and some of the not fully compliant ones). Tested with:
-
-- Debian/Ubuntu/Arch/Manjaro
-- bash/zsh
-
-## 🚀 Roadmap
-
-- [x] Create oneliner for the installation of xxToolbelt.
-- [ ] Add Julia.
-- [ ] Add Kotlin.
-- [ ] Add Haskell.
-- [ ] Add Swift.
-- [ ] Add Nim.
-- [ ] Add Fortran.
-- [ ] Add COBOL.
-- [ ] Add Clojure.
-- [ ] Add Scala.
-- [ ] Add Dart.
-- [ ] Add Delphi.
-- [ ] Create dependency examples where they are missing.
-- [ ] Test on macOS.
-- [ ] Test on BSD.
-- [ ] Add support for PowerShell Core.
-- [ ] Implement architecture that allows easy installation of "script modules" from git repositories by URL.
-- [ ] Add examples for .env secrets management for private scripts.
-- [ ] Create a management menu for managing installed scripts.
-- [x] Create a mechanism for easily exchanging scripts with peers.
 
 ## 🤝 Contribution
 
