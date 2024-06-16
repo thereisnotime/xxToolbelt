@@ -11,6 +11,7 @@
 # TODO: Add indication for private scripts when listing.
 # TODO: Add option to import script module from url.
 # TODO: Add option to open scripts from the menu.
+# TODO: Add a field for description of the scripts.
 # TODO: Fix placement of info log to be under the menu, not above.
 # TODO: Add mechanism to prevent same naming of scripts in different languages.
 # TODO: Remove eval's as they are not safe.

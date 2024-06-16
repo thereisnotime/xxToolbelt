@@ -16,9 +16,9 @@
 
 ## ✨ Description
 
-The xxToolbelt is a simple yet powerful system for creating aliases, scripts, and tools in various programming and scripting languages. It aims to provide a cleaner and more efficient alternative to the traditional giant rc files that many of us rely on. This tool allows you to manage your custom commands and scripts effortlessly, making your development workflow more streamlined and organized. Remember when you had to write this small script that does X and then you forgot about it? With the xxToolbelt, you can easily manage and share your scripts with others.
+The **xxToolbelt** is a simple yet powerful system for creating aliases, scripts, and tools in various programming and scripting languages **entirely written in Bash**. It aims to provide a **cleaner and more efficient** alternative to the traditional giant rc (.bashrc, .zshrc etc.) files that many of us rely on. This tool allows you to **manage your custom commands and scripts** effortlessly, making your development workflow more streamlined and organized. Remember when you had to write this small script that does X and then you forgot about it? With the **xxToolbelt**, you can easily manage and share your scripts with others so you won't lose them or forget about them anymore.
 
-Some of the key features of the xxToolbelt include:
+Some of the key features of the **xxToolbelt** include:
 
 - **No reloading of the shell** required when adding or modifying scripts (after the initial setup).
 - **Support for multiple programming and scripting languages** (not limited to bash).
@@ -26,6 +26,11 @@ Some of the key features of the xxToolbelt include:
 - Mechanism to **share snippets** with others.
 - Adaptability to **different shells** (bash, zsh, fish, etc.).
 - **Centralized requirements** for all your tools/scripts (e.g., Python requirements.txt).
+
+Check out the demos:
+
+- [Using programming languages as scripts](#adding-new-scripts)
+- [Exporting scripts for sharing](#exporting-scripts)
 
 ## 📝 Table of Contents
 
@@ -44,6 +49,7 @@ Some of the key features of the xxToolbelt include:
     - [CLI](#cli)
     - [Modifying scripts](#modifying-scripts)
     - [Adding new scripts](#adding-new-scripts)
+    - [Exporting scripts](#exporting-scripts)
     - [Adding new languages](#adding-new-languages)
     - [Change default script editor](#change-default-script-editor)
     - [Change scripts folder](#change-scripts-folder)
@@ -79,14 +85,15 @@ Some of the key features of the xxToolbelt include:
 
 ## 👍 Pros
 
+- No dependencies except Bash;
 - Dynamic reloading without the need to reload the shell;
 - Can be included in every shell (bash, zsh, fish etc.);
 - Support multiple programming and scripting languages (everything, as long as you can create a shebang for it);
-- Really easily extendible;
+- Really easily extendible and customizable;
 - You can write and reuse scripts using wide variety of languages;
 - Works really well with interpreted languages;
-- You can use centralized requirements for all your toolbelt - ex. Python requirements.txt.
-- Portability;
+- You can use centralized requirements for all your tools/scripts - ex. Python requirements.txt to save storage;
+- Portability - its one file and your scripts folder (optional);
 - Easy version control;
 
 ## 👎 Cons
@@ -180,6 +187,22 @@ Save the file - that's all - no need to reload anything.
 ```bash
 xxtb-load
 ```
+
+Example:
+
+![Adding Scripts](assets/demo02.gif)
+
+### Exporting scripts
+
+You can export your scripts to a snippet with:
+
+```bash
+xxtb -e [scriptname]
+```
+
+Example:
+
+![Export a Script](assets/demo01.gif)
 
 **NOTE:** After the first load, you don't need to reload the shell or open a new terminal every time you change the script.
 

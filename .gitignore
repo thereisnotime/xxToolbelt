@@ -5,6 +5,9 @@
 # Secrets
 .env
 
+# Private
+*.private.*
+
 # Debug Flag
 XXTOOLBELT_DEBUG_MODE
 
