@@ -1,2 +1,6 @@
-*.private.*
-XXTOOLBELT_DEBUG_MODE
+# IDes
+.vscode
+.idea
+
+# Secrets
+.env
