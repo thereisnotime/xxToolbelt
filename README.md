@@ -1,6 +1,6 @@
 # xxToolbelt
 
-## Description
+## ✨ Description
 
 The xxToolbelt is a simple yet powerful system for creating aliases, scripts, and tools in various programming and scripting languages. It aims to provide a cleaner and more efficient alternative to the traditional giant rc files that many of us rely on. This tool allows you to manage your custom commands and scripts effortlessly, making your development workflow more streamlined and organized. Remember when you had to write this small script that does X and then you forgot about it? With the xxToolbelt, you can easily manage and share your scripts with others.
 
@@ -13,21 +13,21 @@ Some of the key features of the xxToolbelt include:
 - Adaptability to **different shells** (bash, zsh, fish, etc.).
 - **Centralized requirements** for all your tools/scripts (e.g., Python requirements.txt).
 
-## Table of Contents
+## 📝 Table of Contents
 
 - [xxToolbelt](#xxtoolbelt)
-  - [Description](#description)
-  - [Table of Contents](#table-of-contents)
+  - [✨ Description](#-description)
+  - [📝 Table of Contents](#-table-of-contents)
+  - [👍 Pros](#-pros)
+  - [👎 Cons](#-cons)
+  - [🛠️ Installation](#️-installation)
+    - [Install with git](#install-with-git)
+    - [Manual install](#manual-install)
+    - [Install with wget](#install-with-wget)
+  - [🗑️ Uninstall](#️-uninstall)
+  - [📚 Usage](#-usage)
     - [TUI](#tui)
     - [CLI](#cli)
-  - [Pros](#pros)
-  - [Cons](#cons)
-  - [Installation](#installation)
-    - [Manual install](#manual-install)
-    - [Install with git](#install-with-git)
-    - [Install with wget](#install-with-wget)
-  - [Uninstall](#uninstall)
-  - [Usage](#usage)
     - [Modifying scripts](#modifying-scripts)
     - [Adding new scripts](#adding-new-scripts)
     - [Adding new languages](#adding-new-languages)
@@ -35,7 +35,7 @@ Some of the key features of the xxToolbelt include:
     - [Change scripts folder](#change-scripts-folder)
     - [Private scripts](#private-scripts)
     - [Change script scanning depth](#change-script-scanning-depth)
-  - [Examples in Various Languages](#examples-in-various-languages)
+  - [🔍 Examples in Various Languages](#-examples-in-various-languages)
     - [Python](#python)
     - [Ruby](#ruby)
     - [Rust](#rust)
@@ -57,13 +57,74 @@ Some of the key features of the xxToolbelt include:
     - [Janet](#janet)
     - [Zig](#zig)
     - [V](#v)
-  - [Compatability](#compatability)
-  - [Roadmap](#roadmap)
-  - [Acknowledgements](#acknowledgements)
+  - [⚙️ Compatability](#️-compatability)
+  - [🚀 Roadmap](#-roadmap)
+  - [🙏 Acknowledgements](#-acknowledgements)
+
+## 👍 Pros
+
+- Dynamic reloading without the need to reload the shell;
+- Can be included in every shell (bash, zsh, fish etc.);
+- Support multiple programming and scripting languages (everything, as long as you can create a shebang for it);
+- Really easily extendible;
+- You can write and reuse scripts using wide variety of languages;
+- Works really well with interpreted languages;
+- You can use centralized requirements for all your toolbelt - ex. Python requirements.txt.
+- Portability;
+- Easy version control;
+
+## 👎 Cons
+
+- Must maintain a lot of separate files instead of one big rc (might as well be a pro);
+- Loading time of compiled languages will be slow and some functionality limited (but still better than the standard way);
+
+## 🛠️ Installation
+
+### Install with git
+
+In your terminal as the current user type:
+
+```bash
+cd /tmp; git clone https://github.com/thereisnotime/xxToolbelt && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+```
+
+### Manual install
+
+In your **~/.bashrc** or **~/.zshrc** or whatever rc file you use paste (prefably in the end of the file):
+
+```bash
+# START xxToolbelt
+source "$HOME/.xxtoobelt/xxtoolbelt.sh"
+# END xxToolbelt
+```
+
+Clone (or symlink) the repository folder to your home directory (or wherever you want). Example:
+
+```bash
+git clone https://github.com/thereisnotime/xxToolbelt
+cp -r ./xxToolbelt ~/.xxtoolbelt
+```
+
+Reload your terminal.
+
+### Install with wget
+
+```bash
+wget --no-check-certificate -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+```
+
+## 🗑️ Uninstall
+
+1. Remove the lines from your rc file.
+2. (optional) Remove the folder for your scripts `rm -rf ~/.xxtoolbelt`.
+
+## 📚 Usage
+
+The main configuration is located in xxtoobelt.sh
 
 ### TUI
 
-You can view TUI with:
+You can start TUI with:
 
 ```bash
 xxtb
@@ -81,68 +142,9 @@ xxtb -h
 
 ![CLI](assets/cli.png "CLI")
 
-## Pros
-
-- Dynamic reloading without the need to reload the shell;
-- Can be included in every shell (bash, zsh, fish etc.);
-- Support multiple programming and scripting languages (everything, as long as you can create a shebang for it);
-- Really easily extendible;
-- You can write and reuse scripts using wide variety of languages;
-- Works really well with interpreted languages;
-- You can use centralized requirements for all your toolbelt - ex. Python requirements.txt.
-- Portability;
-- Easy version control;
-
-## Cons
-
-- Must maintain a lot of separate files instead of one big rc;
-- Loading time of compiled languages will be slow and some funcitonality limited (but still better than the standard way);
-
-## Installation
-
-### Manual install
-
-1. In your **~/.bashrc** or **~/.zshrc** or whatever rc file you use paste (prefably in the end of the file):
-
-```bash
-# START xxToolbelt
-source "$HOME/.xxtoobelt/xxtoolbelt.sh"
-# END xxToolbelt
-```
-
-1. Clone (or symlink) the repository folder to your home directory (or wherever you want). Example:
-
-```bash
-git clone https://github.com/thereisnotime/xxToolbelt
-cp -r ./xxToolbelt ~/.xxtoolbelt
-```
-
-1. Reload your terminal.
-
-### Install with git
-
-```bash
-cd /tmp; git clone https://github.com/thereisnotime/xxToolbelt && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
-```
-
-### Install with wget
-
-```bash
-wget --no-check-certificate -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
-```
-
-## Uninstall
-
-1. Remove the lines from your rc file.
-2. (optional) Remove the folder for your scripts.
-
-## Usage
-
-The main configuration is located in xxtoobelt.sh
-
 ### Modifying scripts
 
-1. For example if your script's name is xxtemplate-py.py type:
+For example if your script's name is xxtemplate-py.py type:
 
 ```bash
 xxedit-xxtemplate-py
@@ -150,16 +152,20 @@ xxedit-xxtemplate-py
 
 This will open your code editor (by default VSCode)
 
-1. Save the file - that's all - no need to reload anything.
+Save the file - that's all - no need to reload anything.
+
+**NOTE:** The *xxedit-* command is automatically generated for each script.
 
 ### Adding new scripts
 
-1. Add the new script with the proper extension to the correct language folder (or create one). **It is recommended using the templates and have the requirements (README.md in the language folder)** because the shebang is importnat.
+1. Add the new script with the proper extension to the correct language folder (or create one). **It is recommended to use the templates and have the requirements (README.md in the language folder)** because the shebang is important.
 2. Reload your shell or open a new terminal or type:
 
 ```bash
 xxtb-load
 ```
+
+**NOTE:** After the first load, you don't need to reload the shell or open a new terminal every time you change the script.
 
 ### Adding new languages
 
@@ -170,11 +176,11 @@ xxtb-load
 
 ### Change default script editor
 
-1. Edit **XXTOOLBELT_SCRIPTS_EDITOR** in your RC file.
+Edit **XXTOOLBELT_SCRIPTS_EDITOR** in your RC file.
 
 ### Change scripts folder
 
-1. Edit **XXTOOLBELT_SCRIPTS_FOLDER** in your RC file.
+Edit **XXTOOLBELT_SCRIPTS_FOLDER** in your RC file.
 
 ### Private scripts
 
@@ -182,9 +188,11 @@ If you have any sensitive information in your scripts and use git, you can add *
 
 ### Change script scanning depth
 
-1. By default it is 2 levels. You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
+By default it is 2 levels (so you can use nested folders for your script's libraries). You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
 
-## Examples in Various Languages
+## 🔍 Examples in Various Languages
+
+Here you can find examples of scripts in various languages that you can use with the xxToolbelt:
 
 ### Python
 
@@ -270,14 +278,14 @@ Check the [Zig README](scripts/zig/README.md) for more information.
 
 Check the [V README](scripts/v/README.md) for more information.
 
-## Compatability
+## ⚙️ Compatability
 
 Should work fine with all POSIX compliant shells (and some of the not fully compliant ones). Tested with:
 
 - Debian/Ubuntu/Arch/Manjaro
 - bash/zsh
 
-## Roadmap
+## 🚀 Roadmap
 
 - [x] Create oneliner for the installation of xxToolbelt.
 - [ ] Add Julia.
@@ -296,10 +304,10 @@ Should work fine with all POSIX compliant shells (and some of the not fully comp
 - [ ] Test on BSD.
 - [ ] Add support for PowerShell Core.
 - [ ] Implement architecture that allows easy installation of "script modules" from git repositories by URL.
+- [ ] Add examples for .env secrets management for private scripts.
 - [ ] Create a management menu for managing installed scripts.
 - [x] Create a mechanism for easily exchanging scripts with peers.
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 - GitHub [gitignore](https://github.com/github/gitignore)
-- 
