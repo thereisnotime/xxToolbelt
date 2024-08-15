@@ -15,5 +15,5 @@ XXTOOLBELT_DEBUG_MODE
 xxtb.log
 
 # Ignored symlinks for test repos
-./scripts/tint-*
-./scripts/toc-*
+scripts/tint-*
+scripts/toc-*
