@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="1.9.6"
+_SCRIPT_VERSION="1.9.7"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -251,7 +251,7 @@ function xxtb-open-folder () {
 }
 function xxtb-export () {
 	script_name="$1"
-	file_path=$(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$script_name.*")
+	file_path=$(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$script_name.*")
 	if ! [ -f "$file_path" ]; then
 		log "No such script was found: $script_name" "ERROR"
 		return 1
@@ -301,7 +301,7 @@ function xxtb-list-scripts () {
 			log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Edit: ${bwhite}xxtbedit-$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
-	done < <(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
+	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
 	log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
 }
 function xxtb-load () {
@@ -324,7 +324,7 @@ function xxtb-load () {
 			fi
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
-	done < <(find "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
+	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
 	if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then log "Loaded $XXTOOLBELT_LOADED_SCRIPTS scripts." "DEBUG"; fi
 }
 
