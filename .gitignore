@@ -14,6 +14,26 @@ XXTOOLBELT_DEBUG_MODE
 # Logs
 xxtb.log
 
-# Ignored symlinks for test repos
-scripts/tint-*
-scripts/toc-*
+# Ignore everything in scripts except tracked folders
+scripts/*
+!scripts/bash/
+!scripts/cpp/
+!scripts/csharp/
+!scripts/dlang/
+!scripts/elixir/
+!scripts/erlang/
+!scripts/golang/
+!scripts/groovy/
+!scripts/janet/
+!scripts/java/
+!scripts/lua/
+!scripts/node/
+!scripts/perl/
+!scripts/powershell/
+!scripts/python/
+!scripts/r/
+!scripts/ruby/
+!scripts/rust/
+!scripts/ts/
+!scripts/v/
+!scripts/zig/
