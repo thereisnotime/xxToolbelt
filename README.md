@@ -83,7 +83,7 @@ Check out the demos:
     - [Janet](#janet)
     - [Zig](#zig)
     - [V](#v)
-  - [🤝 Contribution](#-contribution)
+  - [🤝 Contributing](#-contributing)
   - [📜 License](#-license)
   - [🙏 Acknowledgements](#-acknowledgements)
 
@@ -509,9 +509,17 @@ Check the [Zig README](scripts/zig/README.md) for more information.
 
 Check the [V README](scripts/v/README.md) for more information.
 
-## 🤝 Contribution
+## 🤝 Contributing
 
-We welcome contributions to xxToolbelt! You can help by creating issues or submitting pull requests. If scripting isn't your thing, you can still support the project by testing it with different shells, terminals, and OS versions. If you have questions or need assistance, please open an issue in the repository.
+We welcome contributions from everyone! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+**Quick ways to contribute:**
+
+- Add scripts in your favorite language
+- Test on different shells, terminals, or operating systems
+- Improve documentation
+- Report bugs or suggest features
+- Create and share your own belts
 
 ## 📜 License
 
