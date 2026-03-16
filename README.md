@@ -56,6 +56,7 @@ Check out the demos:
     - [Change default script editor](#change-default-script-editor)
     - [Change scripts folder](#change-scripts-folder)
     - [Private scripts](#private-scripts)
+    - [Belts (External Toolbelts)](#belts-external-toolbelts)
     - [Change script scanning depth](#change-script-scanning-depth)
     - [Using with AI Tools](#using-with-ai-tools)
   - [⚙️ Compatability](#️-compatability)
@@ -216,6 +217,96 @@ Edit **XXTOOLBELT_SCRIPTS_FOLDER** in your RC file.
 
 If you have any sensitive information in your scripts and use git, you can add **".private"** before the script extension to ignore it for the git repository. Example **xxmyscript.sh -> xxmyscript.private.sh**. This will not affect the command, you will still call it with xxmyscript.
 
+### Belts (External Toolbelts)
+
+Belts allow you to manage external toolbelt repositories — either git repos or local folders — and have their scripts automatically synced alongside your core xxToolbelt scripts. This is useful for:
+
+- **Organization-specific toolbelts** — share scripts across your team
+- **Project-specific scripts** — keep them in the project repo, register as a belt
+- **Separating concerns** — personal scripts vs work scripts vs hobby projects
+
+#### Adding a Belt
+
+**From a git repository:**
+
+```bash
+xxtb -a mytools git@github.com:myorg/my-toolbelt.git
+```
+
+This clones the repo to `~/.xxtoolbelt/belts/mytools/` and syncs all scripts.
+
+**From a local folder:**
+
+```bash
+xxtb -a localtools /path/to/my/scripts
+```
+
+This registers the local path (no cloning) and syncs scripts from there.
+
+#### Listing Belts
+
+```bash
+xxtb -r
+```
+
+Shows all registered belts with their folders:
+
+```text
+work (local) -> /home/user/projects/work-toolbelt
+  └─ work-bash
+  └─ work-python
+team (git) -> git@github.com:myorg/team-toolbelt.git
+  └─ team-bash
+  └─ team-node
+```
+
+#### Enable/Disable Belts
+
+Temporarily disable a belt without removing it:
+
+```bash
+xxtb --disable-belt mytools
+xxtb --enable-belt mytools
+```
+
+Disabled belts are skipped during sync and update but remain registered.
+
+#### Removing a Belt
+
+```bash
+xxtb --remove-belt mytools
+```
+
+This removes the registration, cleans up symlinks, and (for git belts) deletes the cloned directory.
+
+#### Updating Belts
+
+When you run `xxtb -u`, xxToolbelt updates itself **and** runs `git pull` on all git-based belts, then re-syncs everything.
+
+#### Belt Structure
+
+A belt repository should have folders containing scripts:
+
+```text
+my-toolbelt/
+├── bash/
+│   ├── xxmy-script.sh
+│   └── xxanother.sh
+├── python/
+│   └── xxpytool.py
+└── README.md
+```
+
+Scripts are synced with the belt name as prefix: `mytools-bash/xxmy-script.sh` becomes available as `xxmy-script` in your PATH.
+
+#### Interactive Management
+
+You can also manage belts through the TUI menu:
+
+```bash
+xxtb  # then select option 9) Manage belts
+```
+
 ### Change script scanning depth
 
 By default it is 2 levels (so you can use nested folders for your script's libraries). You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
@@ -324,7 +415,7 @@ Should work fine with all POSIX compliant shells (and some of the not fully comp
 - [ ] Test on macOS.
 - [ ] Test on BSD.
 - [ ] Add support for PowerShell Core.
-- [ ] Implement architecture that allows easy installation of "script modules" from git repositories by URL.
+- [x] Implement architecture that allows easy installation of "script modules" from git repositories by URL (Belts).
 - [ ] Add examples for .env secrets management for private scripts.
 - [ ] Create a management menu for managing installed scripts.
 - [x] Create a mechanism for easily exchanging scripts with peers.
