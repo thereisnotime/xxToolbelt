@@ -332,6 +332,10 @@ function xxtb-sync () {
 		extension="${filename##*.}"
 		filename="${filename%.*}"
 		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
+			# Skip library files (starting with _)
+			if [[ "$filename" == _* ]]; then
+				continue
+			fi
 			if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
 			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
 			ln -sf "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
