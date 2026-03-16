@@ -474,10 +474,16 @@ function xxtb-sync () {
 	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
 
 	# Phase 3: Sync belt scripts
-	local _belt_scripts
-	_belt_scripts=$(xxtb-sync-belts)
+	local _belt_result _belt_count _belt_scripts
+	_belt_result=$(xxtb-sync-belts)
+	_belt_count=$(echo "$_belt_result" | cut -d' ' -f1)
+	_belt_scripts=$(echo "$_belt_result" | cut -d' ' -f2)
 
-	log "Synced $XXTOOLBELT_LOADED_SCRIPTS core + $_belt_scripts belt scripts, cleaned $_cleaned stale links." "INFO"
+	if [[ "$_belt_count" -gt 0 ]]; then
+		log "Synced $XXTOOLBELT_LOADED_SCRIPTS core + $_belt_scripts scripts from $_belt_count belt(s), cleaned $_cleaned stale links." "INFO"
+	else
+		log "Synced $XXTOOLBELT_LOADED_SCRIPTS scripts, cleaned $_cleaned stale links." "INFO"
+	fi
 }
 
 # Legacy alias for backwards compatibility
@@ -688,8 +694,10 @@ function xxtb-enable-belt () {
 
 function xxtb-sync-belts () {
 	# Sync scripts from all registered belts
-	[[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] && return 0
+	# Returns: "<belt_count> <script_count>"
+	[[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] && echo "0 0" && return 0
 
+	local _belt_count=0
 	local _belt_scripts=0
 	XXTOOLBELT_BIN_FOLDER="$HOME/.local/bin"
 
@@ -707,6 +715,7 @@ function xxtb-sync-belts () {
 		fi
 
 		[[ ! -d "$location" ]] && continue
+		((_belt_count+=1))
 
 		# Symlink each folder as scripts/<name>-<folder>
 		for folder in "$location"/*/; do
@@ -745,7 +754,7 @@ function xxtb-sync-belts () {
 		done
 	done < "$XXTOOLBELT_BELTS_FILE"
 
-	echo "$_belt_scripts"
+	echo "$_belt_count $_belt_scripts"
 }
 
 function xxtb-update-belts () {
