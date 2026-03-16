@@ -20,13 +20,13 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="1.9.7"
+_SCRIPT_VERSION="2.0.0"
 _SCRIPT_NAME="xxTB"
 
 #####################################
 #### Configuration
 #####################################
-# NOTE: The editor to open the scripts with when using the xxtbedit alias.
+# NOTE: Editor used by 'xxtb -s' to open scripts folder.
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 # NOTE The folder where the scripts are located.
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
@@ -120,11 +120,11 @@ function xxtb_print_menu () {
 	echo -ne "${bcyan}======= version $_SCRIPT_VERSION =======${nc}
 ${bwhite}
 1) Open scripts folder
-2) List loaded scripts ($XXTOOLBELT_LOADED_SCRIPTS)
+2) List synced scripts ($XXTOOLBELT_LOADED_SCRIPTS)
 3) Export script (from command)
 4) Import script
 5) Show CLI options
-6) Reload xxToolbelt
+6) Sync scripts (symlinks)
 7) Toggle DEBUG mode (dbg:$XXTOOLBELT_DEBUG_MODE)
 8) Update xxToolbelt
 0) Exit
@@ -148,7 +148,7 @@ function xxtb () {
 				echo -ne "${bcyan}options:${nc}\n"
 				echo -ne "-${bred}h${nc}, --${bred}help${nc}                        show command help\n"
 				echo -ne "-${bred}e${nc} ${bblue}COMMAND${nc}, --${bred}export${nc}=${bblue}COMMAND${nc}      specify a command to export\n"
-				echo -ne "-${bred}r${nc}, --${bred}reload${nc}                      reload xxToolbelt\n"
+				echo -ne "-${bred}sync${nc}, --${bred}sync${nc}                     sync scripts to ~/.local/bin (create/update/clean symlinks)\n"
 				echo -ne "-${bred}ls${nc}, --${bred}list${nc}                       list all loaded scripts\n"
 				echo -ne "-${bred}d${nc}, --${bred}debug${nc}                       toggle debug mode\n"
 				echo -ne "-${bred}s${nc}, --${bred}scripts${nc}                     open scripts folder\n"
@@ -175,8 +175,8 @@ function xxtb () {
 				xxtb-list-scripts
 				return 0
 				;;
-			-r|--reload)
-				xxtb-reload
+			-sync|--sync)
+				xxtb-sync
 				return 0
 				;;
 			-e)
@@ -204,7 +204,7 @@ function xxtb () {
 				3) clear ; xxtb-show-command-export-menu ; xxtb ;;
 				4) xxtb-show-import-script-menu ; xxtb ;;
 				5) clear ; xxtb -h ; xxtb_back_menu ; xxtb ;;
-				6) clear ; xxtb-reload ; xxtb ;;
+				6) clear ; xxtb-sync ; xxtb_back_menu ;;
 				7) clear ; xxtb-toggle-debug ; xxtb ;;
 				8) clear ; xxtb-update ;;
 			0) kill $$ ;;
@@ -264,7 +264,7 @@ function xxtb-export () {
 	file_folder=${file_folder//$file_name.$file_extension}
 	file_command=${file_name//$XXTOOLBELT_PRIVATE_KEYWORD}
 	log "To import the script paste in terminal or in the xxTB import menu the following:\n" "INFO"
-	export_command=XXTBIMPORT="$file_command; mkdir -p \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" || true; if [[ -f \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\" ]]; then echo \"ERROR: File already exists.\"; fi; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-load;"
+	export_command=XXTBIMPORT="$file_command; mkdir -p \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" || true; if [[ -f \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\" ]]; then echo \"ERROR: File already exists.\"; fi; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-sync;"
 	export_command=$(echo "$export_command" | tr -d '\n')
 	echo -ne "${bblue}$export_command${nc}\n"
 }
@@ -298,17 +298,34 @@ function xxtb-list-scripts () {
 		filename="${filename%.*}"
 		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
 			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
-			log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Edit: ${bwhite}xxtbedit-$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
+			log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
 	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
 	log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
 }
-function xxtb-load () {
-	# TODO: Find a way to handle errors in the script loading when nested in other scripts.
-	# set -eE -o functrace
-	# trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND"' ERR
-	# TODO: Add different color for different extensions.
+function xxtb-sync () {
+	# Symlink-based script loading - works in all contexts (interactive shell, AI tools, scripts)
+	XXTOOLBELT_BIN_FOLDER="$HOME/.local/bin"
+	mkdir -p "$XXTOOLBELT_BIN_FOLDER"
+
+	# Phase 1: Clean up stale symlinks (pointing to deleted scripts)
+	local _cleaned=0
+	for link in "$XXTOOLBELT_BIN_FOLDER"/*; do
+		[[ -L "$link" ]] || continue
+		local target
+		target=$(readlink "$link")
+		# Only clean symlinks that point into our scripts folder
+		if [[ "$target" == "$XXTOOLBELT_SCRIPTS_FOLDER"* ]] && [[ ! -e "$link" ]]; then
+			rm -f "$link"
+			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
+				log "Removed stale symlink: $(basename "$link")" "DEBUG"
+			fi
+			((_cleaned+=1))
+		fi
+	done
+
+	# Phase 2: Create/update symlinks for current scripts
 	XXTOOLBELT_LOADED_SCRIPTS=0
 	while IFS= read -r -d '' file; do
 		filename=$(basename -- "$file")
@@ -317,18 +334,30 @@ function xxtb-load () {
 		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
 			if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
 			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
-			alias "$filename"="$file"
-			alias "xxtbedit-$filename"="$XXTOOLBELT_SCRIPTS_EDITOR $file"
-			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then 
-				log "Script added: $filename(.$extension) to $file" "DEBUG"
+			ln -sf "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
+			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
+				log "Synced: $filename(.$extension) -> $file" "DEBUG"
 			fi
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
 	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
-	if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then log "Loaded $XXTOOLBELT_LOADED_SCRIPTS scripts." "DEBUG"; fi
+
+	log "Synced $XXTOOLBELT_LOADED_SCRIPTS scripts, cleaned $_cleaned stale links." "INFO"
+}
+
+# Legacy alias for backwards compatibility
+function xxtb-load () {
+	log "xxtb-load is deprecated, use xxtb-sync instead." "WARN"
+	xxtb-sync
 }
 
 #####################################
 #### Main
 #####################################
-xxtb-load
+# NOTE: No auto-load on shell startup. Run 'xxtb --sync' to sync scripts to ~/.local/bin
+# This keeps shell startup fast and makes scripts available to all tools (AI CLIs, scripts, etc.)
+
+# Ensure ~/.local/bin is in PATH
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+	export PATH="$HOME/.local/bin:$PATH"
+fi

@@ -16,11 +16,14 @@
 
 ## ✨ Description
 
-The **xxToolbelt** is a simple yet powerful system for creating aliases, scripts, and tools in various programming and scripting languages **entirely written in Bash**. It aims to provide a **cleaner and more efficient** alternative to the traditional giant rc (.bashrc, .zshrc etc.) files that many of us rely on. This tool allows you to **manage your custom commands and scripts** effortlessly, making your development workflow more streamlined and organized. Remember when you had to write this small script that does X and then you forgot about it? With the **xxToolbelt**, you can easily manage and share your scripts with others so you won't lose them or forget about them anymore.
+The **xxToolbelt** is a simple yet powerful system for organizing scripts and tools in various programming and scripting languages **entirely written in Bash**. It aims to provide a **cleaner and more efficient** alternative to the traditional giant rc (.bashrc, .zshrc etc.) files that many of us rely on. This tool allows you to **manage your custom commands and scripts** effortlessly, making your development workflow more streamlined and organized. Remember when you had to write this small script that does X and then you forgot about it? With the **xxToolbelt**, you can easily manage and share your scripts with others so you won't lose them or forget about them anymore.
+
+xxToolbelt uses **symlinks** in `~/.local/bin` instead of shell aliases, which means your scripts work **everywhere** — interactive shells, scripts, AI tools (Claude CLI, Copilot, etc.), cron jobs, and any process that uses PATH.
 
 Some of the key features of the **xxToolbelt** include:
 
-- **No reloading of the shell** required when adding or modifying scripts (after the initial setup).
+- **Works everywhere** — not just interactive shells, but AI tools, scripts, cron, etc.
+- **Zero shell startup overhead** — no scanning on every terminal open.
 - **Support for multiple programming and scripting languages** (not limited to bash).
 - **Easy to extend** and customize.
 - Mechanism to **share snippets** with others.
@@ -47,7 +50,6 @@ Check out the demos:
   - [📚 Usage](#-usage)
     - [TUI](#tui)
     - [CLI](#cli)
-    - [Modifying scripts](#modifying-scripts)
     - [Adding new scripts](#adding-new-scripts)
     - [Exporting scripts](#exporting-scripts)
     - [Adding new languages](#adding-new-languages)
@@ -55,6 +57,7 @@ Check out the demos:
     - [Change scripts folder](#change-scripts-folder)
     - [Private scripts](#private-scripts)
     - [Change script scanning depth](#change-script-scanning-depth)
+    - [Using with AI Tools](#using-with-ai-tools)
   - [⚙️ Compatability](#️-compatability)
   - [🚀 Roadmap](#-roadmap)
   - [🔍 Examples in Various Languages](#-examples-in-various-languages)
@@ -86,7 +89,8 @@ Check out the demos:
 ## 👍 Pros
 
 - No dependencies except Bash;
-- Dynamic reloading without the need to reload the shell;
+- **Works with AI tools** (Claude CLI, Copilot, etc.) — not just interactive shells;
+- Zero shell startup overhead — scripts are synced once, not on every terminal;
 - Can be included in every shell (bash, zsh, fish etc.);
 - Support multiple programming and scripting languages (everything, as long as you can create a shebang for it);
 - Really easily extendible and customizable;
@@ -108,7 +112,7 @@ Check out the demos:
 In your terminal as the current user type:
 
 ```bash
-cd /tmp; git clone https://github.com/thereisnotime/xxToolbelt && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+cd /tmp; git clone https://github.com/thereisnotime/xxToolbelt && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && xxtb --sync && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
 ```
 
 ### Manual install
@@ -133,13 +137,14 @@ Reload your terminal.
 ### Install with wget
 
 ```bash
-wget --no-check-certificate -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+wget -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && xxtb --sync && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
 ```
 
 ## 🗑️ Uninstall
 
 1. Remove the lines from your rc file.
-2. (optional) Remove the folder for your scripts `rm -rf ~/.xxtoolbelt`.
+2. Remove symlinks: `find ~/.local/bin -lname '*/.xxtoolbelt/*' -delete`
+3. (optional) Remove the folder for your scripts `rm -rf ~/.xxtoolbelt`.
 
 ## 📚 Usage
 
@@ -165,27 +170,13 @@ xxtb -h
 
 ![CLI](assets/cli.png "CLI")
 
-### Modifying scripts
-
-For example if your script's name is xxtemplate-py.py type:
-
-```bash
-xxedit-xxtemplate-py
-```
-
-This will open your code editor (by default VSCode)
-
-Save the file - that's all - no need to reload anything.
-
-**NOTE:** The *xxedit-* command is automatically generated for each script.
-
 ### Adding new scripts
 
 1. Add the new script with the proper extension to the correct language folder (or create one). **It is recommended to use the templates and have the requirements (README.md in the language folder)** because the shebang is important.
-2. Reload your shell or open a new terminal or type:
+2. Sync scripts:
 
 ```bash
-xxtb-load
+xxtb --sync
 ```
 
 Example:
@@ -204,7 +195,7 @@ Example:
 
 ![Export a Script](assets/demo01.gif)
 
-**NOTE:** After the first load, you don't need to reload the shell or open a new terminal every time you change the script.
+**NOTE:** After syncing, you don't need to reload the shell or re-sync when you modify a script — just run it. Re-sync only when adding or removing scripts.
 
 ### Adding new languages
 
@@ -228,6 +219,85 @@ If you have any sensitive information in your scripts and use git, you can add *
 ### Change script scanning depth
 
 By default it is 2 levels (so you can use nested folders for your script's libraries). You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
+
+### Using with AI Tools
+
+xxToolbelt v2.0+ uses symlinks in `~/.local/bin` instead of shell aliases. This is critical because **AI tools don't load `.bashrc` or `.profile`** — they inherit the PATH environment variable from the terminal session that launched them.
+
+**How it works:**
+
+1. You open a terminal → `.bashrc` sources `xxtoolbelt.sh` → `~/.local/bin` is added to PATH
+2. You run an AI tool from that terminal → it inherits PATH → your scripts are available
+3. The AI tool runs `xxmyscript` → finds the symlink in `~/.local/bin` → executes your script
+
+#### Claude Code (CLI)
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "PATH": "${HOME}/.local/bin:${PATH}"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(xx*:*)"
+    ]
+  }
+}
+```
+
+[Claude Code Settings Docs](https://docs.anthropic.com/en/docs/claude-code/settings)
+
+#### OpenAI Codex CLI
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[shell_environment_policy]
+set = { PATH = "/home/youruser/.local/bin:/usr/bin:/bin" }
+```
+
+[Codex Config Reference](https://github.com/openai/codex)
+
+#### Aider
+
+Add to `~/.aider.conf.yml`:
+
+```yaml
+set-env:
+  - PATH=/home/youruser/.local/bin:$PATH
+```
+
+[Aider Config Docs](https://aider.chat/docs/config/aider_conf.html)
+
+#### Cursor / VS Code
+
+Add to `settings.json`:
+
+```json
+{
+  "terminal.integrated.env.linux": {
+    "PATH": "${env:HOME}/.local/bin:${env:PATH}"
+  },
+  "terminal.integrated.env.osx": {
+    "PATH": "${env:HOME}/.local/bin:${env:PATH}"
+  }
+}
+```
+
+#### Cron / Systemd
+
+```bash
+# crontab
+PATH=/home/youruser/.local/bin:/usr/bin:/bin
+* * * * * xxmyscript
+
+# systemd unit
+[Service]
+Environment="PATH=/home/youruser/.local/bin:/usr/bin:/bin"
+ExecStart=/home/youruser/.local/bin/xxmyscript
+```
 
 ## ⚙️ Compatability
 
