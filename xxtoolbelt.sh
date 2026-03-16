@@ -20,13 +20,13 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.0.0"
+_SCRIPT_VERSION="2.0.1"
 _SCRIPT_NAME="xxTB"
 
 #####################################
 #### Configuration
 #####################################
-# NOTE: Editor used by 'xxtb -s' to open scripts folder.
+# NOTE: Editor used by 'xxtb -o' to open scripts folder.
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 # NOTE The folder where the scripts are located.
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
@@ -148,10 +148,10 @@ function xxtb () {
 				echo -ne "${bcyan}options:${nc}\n"
 				echo -ne "-${bred}h${nc}, --${bred}help${nc}                        show command help\n"
 				echo -ne "-${bred}e${nc} ${bblue}COMMAND${nc}, --${bred}export${nc}=${bblue}COMMAND${nc}      specify a command to export\n"
-				echo -ne "-${bred}sync${nc}, --${bred}sync${nc}                     sync scripts to ~/.local/bin (create/update/clean symlinks)\n"
+				echo -ne "-${bred}s${nc}, --${bred}sync${nc}                        sync scripts to ~/.local/bin (create/update/clean symlinks)\n"
 				echo -ne "-${bred}ls${nc}, --${bred}list${nc}                       list all loaded scripts\n"
 				echo -ne "-${bred}d${nc}, --${bred}debug${nc}                       toggle debug mode\n"
-				echo -ne "-${bred}s${nc}, --${bred}scripts${nc}                     open scripts folder\n"
+				echo -ne "-${bred}o${nc}, --${bred}open${nc}                        open scripts folder\n"
 				echo -ne "-${bred}u${nc}, --${bred}update${nc}                      update xxToolbelt\n"
 				return 0
 				;;
@@ -163,7 +163,7 @@ function xxtb () {
 				xxtb-update
 				return 0
 				;;
-			-s|--scripts)
+			-o|--open)
 				xxtb-open-folder
 				return 0
 				;;
@@ -175,7 +175,7 @@ function xxtb () {
 				xxtb-list-scripts
 				return 0
 				;;
-			-sync|--sync)
+			-s|--sync)
 				xxtb-sync
 				return 0
 				;;
@@ -358,7 +358,7 @@ function xxtb-load () {
 #####################################
 #### Main
 #####################################
-# NOTE: No auto-load on shell startup. Run 'xxtb --sync' to sync scripts to ~/.local/bin
+# NOTE: No auto-load on shell startup. Run 'xxtb -s' to sync scripts to ~/.local/bin
 # This keeps shell startup fast and makes scripts available to all tools (AI CLIs, scripts, etc.)
 
 # Ensure ~/.local/bin is in PATH
