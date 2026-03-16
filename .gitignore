@@ -1,6 +1,9 @@
-# IDes
-.vscode
-.idea
+# IDEs - ignore user-specific files but keep shared configs
+.vscode/*
+!.vscode/settings.json
+.idea/*
+!.idea/vcs.xml
+!.idea/misc.xml
 
 # Secrets
 .env

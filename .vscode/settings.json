@@ -1,0 +1,11 @@
+{
+    "git.ignoredRepositories": [
+        "belts"
+    ],
+    "files.exclude": {
+        "belts/**/.git": true
+    },
+    "search.exclude": {
+        "belts": true
+    }
+}
