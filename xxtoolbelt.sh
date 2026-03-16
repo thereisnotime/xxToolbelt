@@ -452,26 +452,31 @@ function xxtb-sync () {
 		fi
 	done
 
-	# Phase 2: Create/update symlinks for current scripts
+	# Phase 2: Create/update symlinks for current scripts (core only, skip belt symlinks)
 	XXTOOLBELT_LOADED_SCRIPTS=0
-	while IFS= read -r -d '' file; do
-		filename=$(basename -- "$file")
-		extension="${filename##*.}"
-		filename="${filename%.*}"
-		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
-			# Skip library files (starting with _)
-			if [[ "$filename" == _* ]]; then
-				continue
+	for dir in "$XXTOOLBELT_SCRIPTS_FOLDER"/*/; do
+		[[ -d "$dir" ]] || continue
+		# Skip symlinked directories (those are belt directories)
+		[[ -L "${dir%/}" ]] && continue
+		while IFS= read -r -d '' file; do
+			filename=$(basename -- "$file")
+			extension="${filename##*.}"
+			filename="${filename%.*}"
+			if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
+				# Skip library files (starting with _)
+				if [[ "$filename" == _* ]]; then
+					continue
+				fi
+				if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
+				filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
+				ln -sf "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
+				if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
+					log "Synced: $filename(.$extension) -> $file" "DEBUG"
+				fi
+				((XXTOOLBELT_LOADED_SCRIPTS+=1))
 			fi
-			if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
-			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
-			ln -sf "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
-			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
-				log "Synced: $filename(.$extension) -> $file" "DEBUG"
-			fi
-			((XXTOOLBELT_LOADED_SCRIPTS+=1))
-		fi
-	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
+		done < <(find -L "$dir" -maxdepth "$((XXTOOLBELT_SCANNING_DEPTH - 1))" -type f -print0)
+	done
 
 	# Phase 3: Sync belt scripts
 	local _belt_result _belt_count _belt_scripts
