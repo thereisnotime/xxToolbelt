@@ -442,8 +442,8 @@ function xxtb-sync () {
 		[[ -L "$link" ]] || continue
 		local target
 		target=$(readlink "$link")
-		# Only clean symlinks that point into our scripts folder
-		if [[ "$target" == "$XXTOOLBELT_SCRIPTS_FOLDER"* ]] && [[ ! -e "$link" ]]; then
+		# Only clean symlinks that point into our scripts or belts folder
+		if { [[ "$target" == "$XXTOOLBELT_SCRIPTS_FOLDER"* ]] || [[ "$target" == "$XXTOOLBELT_BELTS_FOLDER"* ]]; } && [[ ! -e "$link" ]]; then
 			rm -f "$link"
 			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
 				log "Removed stale symlink: $(basename "$link")" "DEBUG"
@@ -780,7 +780,10 @@ function xxtb-update-belts () {
 		local belt_dir="$XXTOOLBELT_BELTS_FOLDER/$name"
 		if [[ -d "$belt_dir/.git" ]]; then
 			log "Updating belt '$name'..." "INFO"
-			(cd "$belt_dir" && git pull)
+			(cd "$belt_dir" && git pull --rebase 2>/dev/null || {
+				log "Pull failed for '$name', resetting to remote..." "WARN"
+				cd "$belt_dir" && git checkout . 2>/dev/null && git clean -fd 2>/dev/null && git pull --rebase
+			})
 		fi
 	done < "$XXTOOLBELT_BELTS_FILE"
 }
