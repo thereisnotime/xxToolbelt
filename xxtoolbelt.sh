@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.2.0"
+_SCRIPT_VERSION="2.3.0"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -44,7 +44,7 @@ XXTOOLBELT_BELTS_FILE="$HOME/.xxtoolbelt/.belts"
 #####################################
 #### Constants
 #####################################
-XXTOOLBELT_DEBUG_FLAG=$(basename "$0/XXTOOLBELT_DEBUG_MODE")
+XXTOOLBELT_DEBUG_FLAG=$(basename -- "$0/XXTOOLBELT_DEBUG_MODE")
 XXTOOLBELT_DEBUG_MODE=$(if [[ -f  $XXTOOLBELT_DEBUG_FLAG ]]; then echo 1; else echo 0; fi)
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
 XXTOOLBELT_MAIN_FILE="$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
@@ -477,6 +477,15 @@ function xxtb-sync () {
 			fi
 		done < <(find -L "$dir" -maxdepth "$((XXTOOLBELT_SCANNING_DEPTH - 1))" -type f -print0)
 	done
+
+	# Create xxtb wrapper in ~/.local/bin so xxtb works outside sourced shells
+	local _xxtb_wrapper="$XXTOOLBELT_BIN_FOLDER/xxtb"
+	cat > "$_xxtb_wrapper" <<'WRAPPER'
+#!/usr/bin/env bash
+source "$HOME/.xxtoolbelt/xxtoolbelt.sh"
+xxtb "$@"
+WRAPPER
+	chmod +x "$_xxtb_wrapper"
 
 	# Phase 3: Sync belt scripts
 	local _belt_result _belt_count _belt_scripts
