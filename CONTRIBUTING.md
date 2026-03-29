@@ -52,7 +52,7 @@ Help us test on different environments:
 
 ```bash
 # Clone the repository
-git clone https://github.com/thereisnotime/xxToolbelt.git ~/.xxtoolbelt
+git clone git@github.com:thereisnotime/xxToolbelt.git ~/.xxtoolbelt
 
 # Source the script
 source ~/.xxtoolbelt/xxtoolbelt.sh
