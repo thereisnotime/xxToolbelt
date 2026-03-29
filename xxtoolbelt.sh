@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.1"
+_SCRIPT_VERSION="2.3.2"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -745,6 +745,13 @@ function xxtb-sync-belts () {
 
 			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
 				log "Belt symlink: $symlink_name -> $folder" "DEBUG"
+			fi
+
+			# Auto-create Python venv if requirements.txt exists
+			if [[ -f "${folder}requirements.txt" ]] && [[ ! -d "${folder}.venv" ]]; then
+				log "Creating venv for belt folder: $symlink_name" "INFO" >&2
+				python3 -m venv "${folder}.venv" 2>/dev/null && \
+					"${folder}.venv/bin/pip" install -q -r "${folder}requirements.txt" 2>/dev/null
 			fi
 
 			# Scan folder for scripts and symlink to bin
