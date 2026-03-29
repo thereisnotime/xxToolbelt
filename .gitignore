@@ -13,6 +13,7 @@
 
 # Debug Flag
 XXTOOLBELT_DEBUG_MODE
+.debug
 
 # Logs
 xxtb.log

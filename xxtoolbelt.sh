@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.0"
+_SCRIPT_VERSION="2.3.1"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -44,8 +44,8 @@ XXTOOLBELT_BELTS_FILE="$HOME/.xxtoolbelt/.belts"
 #####################################
 #### Constants
 #####################################
-XXTOOLBELT_DEBUG_FLAG=$(basename -- "$0/XXTOOLBELT_DEBUG_MODE")
-XXTOOLBELT_DEBUG_MODE=$(if [[ -f  $XXTOOLBELT_DEBUG_FLAG ]]; then echo 1; else echo 0; fi)
+XXTOOLBELT_DEBUG_FLAG="$HOME/.xxtoolbelt/.debug"
+XXTOOLBELT_DEBUG_MODE=$(if [[ -f "$XXTOOLBELT_DEBUG_FLAG" ]]; then echo 1; else echo 0; fi)
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
 XXTOOLBELT_MAIN_FILE="$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
 XXTOOLBELT_LOADED_SCRIPTS=0
@@ -93,7 +93,7 @@ function log() {
         ;;
 	"dbg" | "debug")
 		if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
-			echo -ne "${bcyan}[DEBUG][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}"
+			echo -ne "${bcyan}[DEBUG][${_SCRIPT_NAME} ${_SCRIPT_VERSION}][${_timestamp}]: ${_message}${nc}${_nl}" >&2
 		fi
 		;;
     *)
