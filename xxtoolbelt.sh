@@ -750,8 +750,8 @@ function xxtb-sync-belts () {
 			# Auto-create Python venv if requirements.txt exists
 			if [[ -f "${folder}requirements.txt" ]] && [[ ! -d "${folder}.venv" ]]; then
 				log "Creating venv for belt folder: $symlink_name" "INFO" >&2
-				python3 -m venv "${folder}.venv" 2>/dev/null && \
-					"${folder}.venv/bin/pip" install -q -r "${folder}requirements.txt" 2>/dev/null
+				python3 -m venv "${folder}.venv" &>/dev/null && \
+					"${folder}.venv/bin/pip" install -q -r "${folder}requirements.txt" &>/dev/null
 			fi
 
 			# Scan folder for scripts and symlink to bin
