@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.2"
+_SCRIPT_VERSION="2.3.3"
 _SCRIPT_NAME="xxTB"
 
 #####################################
