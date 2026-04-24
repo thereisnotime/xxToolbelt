@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.5"
+_SCRIPT_VERSION="2.3.6"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -372,6 +372,19 @@ function b-show-import-script-menu () {
 function xxtb-update () {
 	# Update xxToolbelt core
 	log "Updating xxToolbelt core..." "INFO"
+	local _core_dir
+	_core_dir="$(dirname "$XXTOOLBELT_MAIN_FILE")"
+	local _core_old_head=""
+	if [[ -d "$_core_dir/.git" ]]; then
+		_core_old_head=$(git -C "$_core_dir" rev-parse HEAD 2>/dev/null)
+		git -C "$_core_dir" fetch --quiet 2>/dev/null
+		local _core_incoming
+		_core_incoming=$(git -C "$_core_dir" log HEAD..origin/main --oneline 2>/dev/null)
+		if [[ -n "$_core_incoming" ]]; then
+			log "Core changes incoming:" "INFO"
+			while IFS= read -r line; do log "  $line" "INFO"; done <<< "$_core_incoming"
+		fi
+	fi
 	update_url="https://raw.githubusercontent.com/thereisnotime/xxToolbelt/main/xxtoolbelt.sh"
 	if [ -x "$(command -v curl)" ]; then
 		curl -o "$XXTOOLBELT_MAIN_FILE" "$update_url"
@@ -815,10 +828,17 @@ function xxtb-update-belts () {
 		local belt_dir="$XXTOOLBELT_BELTS_FOLDER/$name"
 		if [[ -d "$belt_dir/.git" ]]; then
 			log "Updating belt '$name'..." "INFO"
+			local _old_head
+			_old_head=$(git -C "$belt_dir" rev-parse HEAD 2>/dev/null)
 			(cd "$belt_dir" && git pull --rebase 2>/dev/null || {
 				log "Pull failed for '$name', resetting to remote..." "WARN"
 				cd "$belt_dir" && git checkout . 2>/dev/null && git clean -fd 2>/dev/null && git pull --rebase
 			})
+			local _new_commits
+			_new_commits=$(git -C "$belt_dir" log "${_old_head}..HEAD" --oneline 2>/dev/null)
+			if [[ -n "$_new_commits" ]]; then
+				while IFS= read -r line; do log "  $line" "INFO"; done <<< "$_new_commits"
+			fi
 		fi
 	done < "$XXTOOLBELT_BELTS_FILE"
 }
