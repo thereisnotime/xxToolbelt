@@ -66,6 +66,30 @@ Extend `XXTOOLBELT_SCRIPTS_WHITELIST` (around line 38). Add both the extension t
 ### Changing sync behavior
 Touch `xxtb-sync()` for core scripts or `xxtb-sync-belts()` for belt scripts. Be vigilant about stdout in `xxtb-sync-belts`.
 
+### Switching a belt between local folder and git repo
+
+The distinction is purely in the source stored in `.belts`: a source starting with `/` or `~` is local (no clone); anything else is a git URL (cloned into `belts/<name>/`). `xxtb-remove-belt` **deletes** `belts/<name>/` only for git-registered belts, so the safe paths differ by direction.
+
+**Registered local path → git repo** (folder not yet in `belts/`):
+```bash
+xxtb --remove-belt <name>          # removes symlinks, unregisters; folder is NOT deleted
+xxtb -a <name> <git-url>           # clones into belts/<name>/, registers, syncs
+```
+
+**Registered git belt → local folder** (keep the cloned folder, just re-register):
+```bash
+# Don't use --remove-belt — it would delete belts/<name>/
+sed -i "s|^${name}|.*|${name}|/absolute/path|" .belts   # rewrite source in registry
+xxtb -s                                                   # re-sync
+```
+Or edit `.belts` manually: change the line from `name|https://...` to `name|/absolute/path`.
+
+**Manually cloned into `belts/<name>/` and want to register as a git belt** (most common bootstrap case — `xxtb -a` would fail because the directory already exists):
+```bash
+echo "name|https://git-url" >> .belts
+xxtb -s
+```
+
 ### Bumping the version
 `_SCRIPT_VERSION` on line 23. Bump after any meaningful change — minor for fixes, minor+1 for new features. Push right after.
 

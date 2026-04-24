@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.3"
+_SCRIPT_VERSION="2.3.4"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -140,11 +140,10 @@ function xxtb_print_belts_menu () {
 	echo -ne "${bcyan}======= Belts Management =======${nc}
 ${bwhite}
 1) List belts
-2) Add belt (git)
-3) Add belt (local)
-4) Enable belt
-5) Disable belt
-6) Remove belt
+2) Add belt
+3) Enable belt
+4) Disable belt
+5) Remove belt
 0) Back
 ${nc}
 ${bcyan}===============================${nc}"
@@ -156,11 +155,10 @@ function xxtb-belts-menu () {
 	read -r b
 	case $b in
 		1) clear ; xxtb-list-belts ; xxtb_back_belts_menu ;;
-		2) clear ; xxtb-add-belt-interactive git ; xxtb-belts-menu ;;
-		3) clear ; xxtb-add-belt-interactive local ; xxtb-belts-menu ;;
-		4) clear ; xxtb-toggle-belt-interactive enable ; xxtb-belts-menu ;;
-		5) clear ; xxtb-toggle-belt-interactive disable ; xxtb-belts-menu ;;
-		6) clear ; xxtb-remove-belt-interactive ; xxtb-belts-menu ;;
+		2) clear ; xxtb-add-belt-interactive ; xxtb-belts-menu ;;
+		3) clear ; xxtb-toggle-belt-interactive enable ; xxtb-belts-menu ;;
+		4) clear ; xxtb-toggle-belt-interactive disable ; xxtb-belts-menu ;;
+		5) clear ; xxtb-remove-belt-interactive ; xxtb-belts-menu ;;
 		0) clear ; xxtb ;;
 		*) clear ; log "No such option." "ERROR" ; xxtb-belts-menu ;;
 	esac
@@ -172,25 +170,45 @@ function xxtb_back_belts_menu () {
 	xxtb-belts-menu
 }
 function xxtb-add-belt-interactive () {
-	local type="$1"
 	echo -ne "\nEnter belt name: "
 	read -r belt_name
 	if [[ -z "$belt_name" ]]; then
 		log "Belt name cannot be empty." "ERROR"
+		log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+		read -r -s
 		return 1
 	fi
-	if [[ "$type" == "git" ]]; then
-		echo -ne "Enter git URL: "
-		read -r belt_source
-	else
-		echo -ne "Enter local path: "
-		read -r belt_source
-	fi
+	echo -ne "Type (g = git URL, l = local path): "
+	read -r belt_type
+	case "$belt_type" in
+		g|G|git)
+			echo -ne "Enter git URL: "
+			read -r belt_source
+			;;
+		l|L|local)
+			echo -ne "Enter local path: "
+			read -r belt_source
+			;;
+		*)
+			log "Invalid type. Use 'g' for git or 'l' for local." "ERROR"
+			log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+			read -r -s
+			return 1
+			;;
+	esac
 	if [[ -z "$belt_source" ]]; then
 		log "Source cannot be empty." "ERROR"
+		log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+		read -r -s
 		return 1
 	fi
-	xxtb-add-belt "$belt_name" "$belt_source"
+	if xxtb-add-belt "$belt_name" "$belt_source"; then
+		log "Belt '$belt_name' added successfully." "INFO"
+	else
+		log "Failed to add belt '$belt_name'." "ERROR"
+	fi
+	log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+	read -r -s
 }
 function xxtb-toggle-belt-interactive () {
 	local action="$1"
