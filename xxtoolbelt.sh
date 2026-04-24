@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.4"
+_SCRIPT_VERSION="2.3.5"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -498,6 +498,7 @@ function xxtb-sync () {
 
 	# Create xxtb wrapper in ~/.local/bin so xxtb works outside sourced shells
 	local _xxtb_wrapper="$XXTOOLBELT_BIN_FOLDER/xxtb"
+	rm -f "$_xxtb_wrapper"
 	cat > "$_xxtb_wrapper" <<'WRAPPER'
 #!/usr/bin/env bash
 source "$HOME/.xxtoolbelt/xxtoolbelt.sh"
