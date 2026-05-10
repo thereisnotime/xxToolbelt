@@ -830,10 +830,13 @@ function xxtb-update-belts () {
 			log "Updating belt '$name'..." "INFO"
 			local _old_head
 			_old_head=$(git -C "$belt_dir" rev-parse HEAD 2>/dev/null)
-			(cd "$belt_dir" && git pull --rebase 2>/dev/null || {
-				log "Pull failed for '$name', resetting to remote..." "WARN"
-				cd "$belt_dir" && git checkout . 2>/dev/null && git clean -fd 2>/dev/null && git pull --rebase
-			})
+			(
+				cd "$belt_dir" || exit 1
+				if ! git pull --rebase 2>/dev/null; then
+					log "Pull failed for '$name', resetting to remote..." "WARN"
+					git checkout . 2>/dev/null && git clean -fd 2>/dev/null && git pull --rebase
+				fi
+			)
 			local _new_commits
 			_new_commits=$(git -C "$belt_dir" log "${_old_head}..HEAD" --oneline 2>/dev/null)
 			if [[ -n "$_new_commits" ]]; then
