@@ -113,7 +113,7 @@ Check out the demos:
 In your terminal as the current user type:
 
 ```bash
-cd "${TMPDIR:-/tmp}"; git clone git@github.com:thereisnotime/xxToolbelt.git && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && xxtb --sync && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+git clone git@github.com:thereisnotime/xxToolbelt.git "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(ps -p $$ -ocomm=)rc" && source "$HOME/.$(ps -p $$ -ocomm=)rc" && xxtb --sync && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
 ```
 
 ### Manual install
@@ -129,8 +129,7 @@ source "$HOME/.xxtoolbelt/xxtoolbelt.sh"
 Clone (or symlink) the repository folder to your home directory (or wherever you want). Example:
 
 ```bash
-git clone git@github.com:thereisnotime/xxToolbelt.git
-cp -r ./xxToolbelt ~/.xxtoolbelt
+git clone git@github.com:thereisnotime/xxToolbelt.git "$HOME/.xxtoolbelt"
 ```
 
 Reload your terminal.
