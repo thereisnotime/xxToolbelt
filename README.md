@@ -28,7 +28,7 @@ Some of the key features of the **xxToolbelt** include:
 - **Easy to extend** and customize.
 - Mechanism to **share snippets** with others.
 - Adaptability to **different shells** (bash, zsh, fish, etc.).
-- **Centralized requirements** for all your tools/scripts (e.g., Python requirements.txt).
+- **Shared or isolated Python venvs** — per-belt isolation by default, or opt into a single shared venv with [uv](https://github.com/astral-sh/uv) support for faster installs.
 
 Check out the demos:
 
@@ -57,8 +57,11 @@ Check out the demos:
     - [Change scripts folder](#change-scripts-folder)
     - [Private scripts](#private-scripts)
     - [Belts (External Toolbelts)](#belts-external-toolbelts)
+    - [Library files](#library-files)
+    - [Debug mode](#debug-mode)
     - [Change script scanning depth](#change-script-scanning-depth)
     - [Using with AI Tools](#using-with-ai-tools)
+  - [📖 Documentation](#-documentation)
   - [⚙️ Compatability](#️-compatability)
   - [🚀 Roadmap](#-roadmap)
   - [🔍 Examples in Various Languages](#-examples-in-various-languages)
@@ -97,7 +100,7 @@ Check out the demos:
 - Really easily extendible and customizable;
 - You can write and reuse scripts using wide variety of languages;
 - Works really well with interpreted languages;
-- You can use centralized requirements for all your tools/scripts - ex. Python requirements.txt to save storage;
+- Shared or per-belt Python venvs with automatic uv/pip management;
 - Portability - its one file and your scripts folder (optional);
 - Easy version control;
 
@@ -148,7 +151,7 @@ cd "${TMPDIR:-/tmp}" && wget -O xxToolbelt.tar.gz https://github.com/thereisnoti
 
 ## 📚 Usage
 
-The main configuration is located in xxtoobelt.sh
+The main configuration is located in `xxtoolbelt.sh`. For deeper topics see the [`docs/`](docs/) folder: [Advanced Usage](docs/advanced-usage.md), [Belt Authoring](docs/belt-authoring.md), [Python Venv](docs/python-venv.md).
 
 ### TUI
 
@@ -214,7 +217,21 @@ Edit **XXTOOLBELT_SCRIPTS_FOLDER** in your RC file.
 
 ### Private scripts
 
-If you have any sensitive information in your scripts and use git, you can add **".private"** before the script extension to ignore it for the git repository. Example **xxmyscript.sh -> xxmyscript.private.sh**. This will not affect the command, you will still call it with xxmyscript.
+Add `.private` before the extension to gitignore a script while keeping it synced and callable by its clean name:
+
+```
+xxmy-tokens.private.sh   →  callable as: xxmy-tokens
+xxwork-api.private.py    →  callable as: xxwork-api
+```
+
+### Library files
+
+Files whose name starts with `_` are treated as shared libraries and are never symlinked into `~/.local/bin`. Use them for helpers sourced or imported by other scripts:
+
+```
+scripts/bash/_colors.sh       # sourced by other scripts, not callable directly
+scripts/python/_api_client.py # imported by other scripts
+```
 
 ### Belts (External Toolbelts)
 
@@ -284,19 +301,26 @@ When you run `xxtb -u`, xxToolbelt updates itself **and** runs `git pull` on all
 
 #### Belt Structure
 
-A belt repository should have folders containing scripts:
+Language folders sit at the repo root. Scripts must be named `xx*`. Files named `_*` are libraries, not synced.
 
 ```text
 my-toolbelt/
 ├── bash/
 │   ├── xxmy-script.sh
-│   └── xxanother.sh
+│   ├── xxanother.sh
+│   └── _helpers.sh        # library, not synced
 ├── python/
-│   └── xxpytool.py
+│   ├── xxpytool.py
+│   ├── requirements.txt   # auto-installs into a venv on sync
+│   └── .shared-venv       # optional: opt into shared ~/.xxtoolbelt/.venv
 └── README.md
 ```
 
 Scripts are synced with the belt name as prefix: `mytools-bash/xxmy-script.sh` becomes available as `xxmy-script` in your PATH.
+
+If `python/requirements.txt` exists, xxToolbelt automatically creates a venv and installs deps using [uv](https://github.com/astral-sh/uv) (if available) or pip. Add a `.shared-venv` marker to share one venv across all belts instead of one per belt. See [docs/python-venv.md](docs/python-venv.md) for details.
+
+For a complete belt authoring guide see [docs/belt-authoring.md](docs/belt-authoring.md).
 
 #### Interactive Management
 
@@ -306,9 +330,20 @@ You can also manage belts through the TUI menu:
 xxtb  # then select option 9) Manage belts
 ```
 
+### Debug mode
+
+Toggle verbose logging for sync operations:
+
+```bash
+xxtb --debug   # enable
+xxtb --debug   # toggle off
+```
+
+Prints every symlink created, every stale link removed, and every belt script registered. See [docs/advanced-usage.md](docs/advanced-usage.md) for more.
+
 ### Change script scanning depth
 
-By default it is 2 levels (so you can use nested folders for your script's libraries). You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
+By default it is 3 levels (so you can use nested folders for your script's libraries). You can edit **XXTOOLBELT_SCANNING_DEPTH** in your RC file.
 
 ### Using with AI Tools
 
@@ -418,6 +453,7 @@ Should work fine with all POSIX compliant shells (and some of the not fully comp
 - [ ] Add examples for .env secrets management for private scripts.
 - [ ] Create a management menu for managing installed scripts.
 - [x] Create a mechanism for easily exchanging scripts with peers.
+- [x] Shared Python venv with uv support for belts.
 
 
 ## 🔍 Examples in Various Languages
@@ -520,9 +556,17 @@ We welcome contributions from everyone! See [CONTRIBUTING.md](CONTRIBUTING.md) f
 - Report bugs or suggest features
 - Create and share your own belts
 
+## 📖 Documentation
+
+| Guide | Description |
+|---|---|
+| [Advanced Usage](docs/advanced-usage.md) | Debug mode, private/library scripts, export/import, scanning depth, cron/systemd |
+| [Belt Authoring](docs/belt-authoring.md) | How to write and publish a belt, shebang patterns, venv setup, authoring checklist |
+| [Python Venv](docs/python-venv.md) | Per-belt vs shared venv, uv installation, migration steps, troubleshooting |
+
 ## 📜 License
 
-Check the [LICENSE](LICENSE) file for more information.
+[PolyForm Noncommercial License 1.0.0](LICENSE) — free for personal use, research, education, and non-profits. Commercial use is not permitted.
 
 ## 🙏 Acknowledgements
 
