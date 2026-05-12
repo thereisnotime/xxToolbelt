@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.9"
+_SCRIPT_VERSION="2.4.0"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -47,7 +47,7 @@ XXTOOLBELT_SHARED_VENV="$HOME/.xxtoolbelt/.venv"
 #### Constants
 #####################################
 XXTOOLBELT_DEBUG_FLAG="$HOME/.xxtoolbelt/.debug"
-XXTOOLBELT_DEBUG_MODE=$(if [[ -f "$XXTOOLBELT_DEBUG_FLAG" ]]; then echo 1; else echo 0; fi)
+if [[ -f "$XXTOOLBELT_DEBUG_FLAG" ]]; then XXTOOLBELT_DEBUG_MODE=1; else XXTOOLBELT_DEBUG_MODE=0; fi
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
 XXTOOLBELT_MAIN_FILE="$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
 XXTOOLBELT_LOADED_SCRIPTS=0
@@ -918,4 +918,17 @@ function xxtb-update-belts () {
 # Ensure ~/.local/bin is in PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
 	export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Lazy-load stub — replaces itself on first call so the full file is only
+# parsed when xxtb is actually used, not on every shell open.
+# To opt in, replace 'source ~/.xxtoolbelt/xxtoolbelt.sh' in your rc file with:
+#   source ~/.xxtoolbelt/xxtoolbelt.sh --lazy
+if [[ "${1:-}" == "--lazy" ]]; then
+	xxtb() {
+		unset -f xxtb
+		# shellcheck source=/dev/null
+		source "$HOME/.xxtoolbelt/xxtoolbelt.sh"
+		xxtb "$@"
+	}
 fi
