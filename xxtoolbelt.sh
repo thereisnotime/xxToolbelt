@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.8"
+_SCRIPT_VERSION="2.3.9"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -40,6 +40,8 @@ XXTOOLBELT_TIME_FORMAT="short"
 XXTOOLBELT_BELTS_FOLDER="$HOME/.xxtoolbelt/belts"
 # NOTE: The file where belt registrations are stored.
 XXTOOLBELT_BELTS_FILE="$HOME/.xxtoolbelt/.belts"
+# NOTE: Shared Python venv for belts that opt in via a .shared-venv marker file.
+XXTOOLBELT_SHARED_VENV="$HOME/.xxtoolbelt/.venv"
 
 #####################################
 #### Constants
@@ -739,6 +741,52 @@ function xxtb-enable-belt () {
 	fi
 }
 
+function xxtb-ensure-venv () {
+	# xxtb-ensure-venv <venv_path> <requirements_file>
+	# Creates the venv if missing, then installs/syncs requirements.
+	# Prefers uv; falls back to python3 -m venv + pip.
+	# All output silenced — stdout is load-bearing in xxtb-sync-belts.
+	local venv_path="$1"
+	local req_file="$2"
+
+	if [[ -z "$venv_path" ]] || [[ -z "$req_file" ]]; then
+		log "xxtb-ensure-venv: missing args" "ERR" >&2
+		return 1
+	fi
+
+	[[ ! -f "$req_file" ]] && return 0
+
+	if command -v uv &>/dev/null; then
+		# uv: create venv if missing, then sync requirements
+		if [[ ! -d "$venv_path" ]]; then
+			uv venv "$venv_path" &>/dev/null || {
+				log "uv venv creation failed: $venv_path" "ERR" >&2
+				return 1
+			}
+		fi
+		uv pip install -q --python "$venv_path/bin/python3" -r "$req_file" &>/dev/null || {
+			log "uv pip install failed for: $req_file" "ERR" >&2
+			return 1
+		}
+	else
+		# Fallback: python3 -m venv + pip
+		if ! command -v python3 &>/dev/null; then
+			log "python3 not found, skipping venv for: $req_file" "WARN" >&2
+			return 0
+		fi
+		if [[ ! -d "$venv_path" ]]; then
+			python3 -m venv "$venv_path" &>/dev/null || {
+				log "python3 -m venv failed: $venv_path" "ERR" >&2
+				return 1
+			}
+		fi
+		"$venv_path/bin/pip" install -q -r "$req_file" &>/dev/null || {
+			log "pip install failed for: $req_file" "ERR" >&2
+			return 1
+		}
+	fi
+}
+
 function xxtb-sync-belts () {
 	# Sync scripts from all registered belts
 	# Returns: "<belt_count> <script_count>"
@@ -780,11 +828,25 @@ function xxtb-sync-belts () {
 				log "Belt symlink: $symlink_name -> $folder" "DEBUG"
 			fi
 
-			# Auto-create Python venv if requirements.txt exists
-			if [[ -f "${folder}requirements.txt" ]] && [[ ! -d "${folder}.venv" ]]; then
-				log "Creating venv for belt folder: $symlink_name" "INFO" >&2
-				python3 -m venv "${folder}.venv" &>/dev/null && \
-					"${folder}.venv/bin/pip" install -q -r "${folder}requirements.txt" &>/dev/null
+			# Auto-create/sync Python venv if requirements.txt exists
+			if [[ -f "${folder}requirements.txt" ]]; then
+				if [[ -f "${folder}.shared-venv" ]]; then
+					# Opt-in shared venv — warn so conflicts are visible
+					log "Belt '$name' uses shared venv ($XXTOOLBELT_SHARED_VENV)" "INFO" >&2
+					if ! command -v uv &>/dev/null; then
+						log "uv not found — install uv for faster syncs (falling back to pip)" "WARN" >&2
+					fi
+					xxtb-ensure-venv "$XXTOOLBELT_SHARED_VENV" "${folder}requirements.txt"
+				else
+					# Per-belt isolated venv (default); re-sync if requirements.txt is newer
+					if [[ ! -d "${folder}.venv" ]] || [[ "${folder}requirements.txt" -nt "${folder}.venv" ]]; then
+						log "Syncing venv for belt folder: $symlink_name" "INFO" >&2
+						if ! command -v uv &>/dev/null; then
+							log "uv not found — install uv for faster syncs (falling back to pip)" "WARN" >&2
+						fi
+						xxtb-ensure-venv "${folder}.venv" "${folder}requirements.txt"
+					fi
+				fi
 			fi
 
 			# Scan folder for scripts and symlink to bin
