@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.3.7"
+_SCRIPT_VERSION="2.3.8"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -680,6 +680,7 @@ function xxtb-remove-belt () {
 	fi
 
 	# Remove from belts file
+	rm -f "$XXTOOLBELT_BELTS_FILE.tmp"
 	grep -v "^${name}|" "$XXTOOLBELT_BELTS_FILE" > "$XXTOOLBELT_BELTS_FILE.tmp"
 	command mv -f "$XXTOOLBELT_BELTS_FILE.tmp" "$XXTOOLBELT_BELTS_FILE"
 
