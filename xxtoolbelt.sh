@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.4.0"
+_SCRIPT_VERSION="2.5.0"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -874,30 +874,49 @@ function xxtb-sync-belts () {
 }
 
 function xxtb-update-belts () {
-	# Update all git-based belts
+	# Update all registered belts: git repos get stash/pull/pop, local paths get rsync
 	[[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] && return 0
 
 	while IFS='|' read -r name source; do
 		[[ -z "$name" ]] && continue
-		# Skip disabled belts (lines starting with #)
 		[[ "$name" == \#* ]] && continue
 
-		# Skip local paths
+		local belt_dir="$XXTOOLBELT_BELTS_FOLDER/$name"
+
+		# Local path belt: rsync source into belt dir
 		if [[ "$source" == /* ]] || [[ "$source" == ~* ]]; then
-			log "Skipping local belt '$name'" "DEBUG"
+			local expanded_source="${source/#\~/$HOME}"
+			if [[ ! -e "$expanded_source" ]]; then
+				log "Local belt '$name': source '$expanded_source' not found, skipping" "WARN"
+				continue
+			fi
+			log "Syncing local belt '$name' from '$expanded_source'..." "INFO"
+			if [[ -d "$expanded_source" ]]; then
+				rsync -a --delete "$expanded_source"/ "$belt_dir"/
+			else
+				cp -f "$expanded_source" "$belt_dir/"
+			fi
 			continue
 		fi
 
-		local belt_dir="$XXTOOLBELT_BELTS_FOLDER/$name"
+		# Git-based belt: stash local changes, pull, pop stash
 		if [[ -d "$belt_dir/.git" ]]; then
 			log "Updating belt '$name'..." "INFO"
 			local _old_head
 			_old_head=$(git -C "$belt_dir" rev-parse HEAD 2>/dev/null)
 			(
 				cd "$belt_dir" || exit 1
+				local _stashed=false
+				if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+					log "Stashing local changes in '$name'..." "DEBUG"
+					git stash push -q --include-untracked && _stashed=true
+				fi
 				if ! git pull --rebase 2>/dev/null; then
-					log "Pull failed for '$name', resetting to remote..." "WARN"
-					git checkout . 2>/dev/null && git clean -fd 2>/dev/null && git pull --rebase
+					log "Pull failed for '$name', aborting rebase..." "WARN"
+					git rebase --abort 2>/dev/null
+				fi
+				if [[ "$_stashed" == true ]]; then
+					git stash pop -q 2>/dev/null || log "Stash pop failed for '$name' — check manually" "WARN"
 				fi
 			)
 			local _new_commits
