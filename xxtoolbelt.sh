@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.5.1"
+_SCRIPT_VERSION="2.5.2"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -770,8 +770,10 @@ function xxtb-ensure-venv () {
 				return 1
 			}
 		fi
-		uv pip install -q --python "$venv_path/bin/python3" -r "$req_file" &>/dev/null || {
+		local _uv_out
+		_uv_out=$(uv pip install -q --python "$venv_path/bin/python3" -r "$req_file" 2>&1) || {
 			log "uv pip install failed for: $req_file" "ERR" >&2
+			[[ -n "$_uv_out" ]] && log "$_uv_out" "ERR" >&2
 			return 1
 		}
 	else
