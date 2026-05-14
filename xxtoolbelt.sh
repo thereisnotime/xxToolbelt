@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.5.2"
+_SCRIPT_VERSION="2.5.3"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -762,16 +762,23 @@ function xxtb-ensure-venv () {
 
 	[[ ! -f "$req_file" ]] && return 0
 
-	if command -v uv &>/dev/null; then
+	# Resolve real uv binary — asdf shims require a .tool-versions entry; bypass via asdf which
+	local _uv=""
+	if command -v asdf &>/dev/null; then
+		_uv=$(asdf which uv 2>/dev/null) || true
+	fi
+	[[ -z "$_uv" ]] && _uv=$(command -v uv 2>/dev/null) || true
+
+	if [[ -n "$_uv" ]]; then
 		# uv: create venv if missing, then sync requirements
 		if [[ ! -d "$venv_path" ]]; then
-			uv venv "$venv_path" &>/dev/null || {
+			"$_uv" venv "$venv_path" &>/dev/null || {
 				log "uv venv creation failed: $venv_path" "ERR" >&2
 				return 1
 			}
 		fi
 		local _uv_out
-		_uv_out=$(uv pip install -q --python "$venv_path/bin/python3" -r "$req_file" 2>&1) || {
+		_uv_out=$("$_uv" pip install -q --python "$venv_path/bin/python3" -r "$req_file" 2>&1) || {
 			log "uv pip install failed for: $req_file" "ERR" >&2
 			[[ -n "$_uv_out" ]] && log "$_uv_out" "ERR" >&2
 			return 1
