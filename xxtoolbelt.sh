@@ -20,7 +20,7 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.5.3"
+_SCRIPT_VERSION="2.5.4"
 _SCRIPT_NAME="xxTB"
 
 #####################################
@@ -755,7 +755,7 @@ function xxtb-ensure-venv () {
 	fi
 
 	# On Termux prefer requirements-termux.txt (strips packages that won't build on Android)
-	if [[ -n "$TERMUX_VERSION" ]]; then
+	if [[ -n "${TERMUX_VERSION:-}" ]]; then
 		local termux_req="${req_file%requirements.txt}requirements-termux.txt"
 		[[ -f "$termux_req" ]] && req_file="$termux_req"
 	fi
