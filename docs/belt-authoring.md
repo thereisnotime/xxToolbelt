@@ -92,6 +92,29 @@ All belts that opt in share `~/.xxtoolbelt/.venv`. Use this when your deps overl
 
 ---
 
+## OS-Specific Scripts
+
+Belts are often shared between Linux and macOS machines. A script that only works on some operating systems declares it in a comment within its first 10 lines:
+
+```bash
+#!/usr/bin/env bash
+# xxtb-os: linux
+```
+
+The list is comma separated OS names from `uname -s`, lowercased (`linux`, `darwin`, `freebsd`...), with optional spaces after commas:
+
+```bash
+# xxtb-os: linux, darwin
+```
+
+For languages without `#` comments use `// xxtb-os: linux` or `-- xxtb-os: linux`. No marker means all OSes.
+
+On sync, a script whose list doesn't include the current OS is skipped, and any stale symlink to it in `~/.local/bin` is removed. To mark a whole language folder, put a `.xxtb-os` file containing the list in that folder.
+
+Things that usually mean `# xxtb-os: linux`: `systemctl`/`journalctl`, `apt`/`dpkg`/`flatpak`/`snap`, `ip`/`iptables`/`nmcli`/`wg-quick`, `xdg-open`, `notify-send`/`xclip`/`xrandr`/`qdbus`, `/proc` and `/sys`.
+
+---
+
 ## Private Scripts in Belts
 
 Same rule as core scripts — name the file `xxscript.private.ext` and it is gitignored but synced with the clean name `xxscript`.
@@ -143,3 +166,5 @@ xxtb -s
 - [ ] `requirements.txt` present if Python deps are needed
 - [ ] `.shared-venv` marker added if opting into shared venv
 - [ ] Shebangs tested standalone before registering
+- [ ] Shebangs use `/usr/bin/env` (`#!/usr/bin/env bash`, not `#!/bin/bash`, which is bash 3.2 on macOS)
+- [ ] Linux-only (or macOS-only) scripts marked with `# xxtb-os: ...`

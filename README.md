@@ -46,6 +46,7 @@ Check out the demos:
     - [Install with git](#install-with-git)
     - [Manual install](#manual-install)
     - [Install with wget](#install-with-wget)
+    - [macOS](#macos)
   - [🗑️ Uninstall](#️-uninstall)
   - [📚 Usage](#-usage)
     - [TUI](#tui)
@@ -58,6 +59,7 @@ Check out the demos:
     - [Private scripts](#private-scripts)
     - [Belts (External Toolbelts)](#belts-external-toolbelts)
     - [Library files](#library-files)
+    - [OS-specific scripts](#os-specific-scripts)
     - [Debug mode](#debug-mode)
     - [Change script scanning depth](#change-script-scanning-depth)
     - [Using with AI Tools](#using-with-ai-tools)
@@ -113,15 +115,15 @@ Check out the demos:
 
 ### Install with git
 
-In your terminal as the current user type:
+In your terminal as the current user type (works from bash or zsh; the rc file is picked from your login shell, `~/.zshrc` for zsh, `~/.bashrc` for bash, `~/.bash_profile` for bash on macOS):
 
 ```bash
-git clone git@github.com:thereisnotime/xxToolbelt.git "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(basename "$(ps -p $$ -ocomm=)")rc" && source "$HOME/.$(basename "$(ps -p $$ -ocomm=)")rc" && xxtb --sync && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+git clone git@github.com:thereisnotime/xxToolbelt.git "$HOME/.xxtoolbelt" && case "${SHELL##*/}" in zsh) _rc="$HOME/.zshrc" ;; bash) if [ "$(uname -s)" = Darwin ]; then _rc="$HOME/.bash_profile"; else _rc="$HOME/.bashrc"; fi ;; *) _rc="$HOME/.${SHELL##*/}rc" ;; esac && printf '\n# START xxToolbelt\nsource "$HOME/.xxtoolbelt/xxtoolbelt.sh"\n# END xxToolbelt\n' >> "$_rc" && source "$HOME/.xxtoolbelt/xxtoolbelt.sh" && xxtb --sync && printf '\n\033[1;32m======= xxToolbelt was installed. Try xxtb\033[m\n'
 ```
 
 ### Manual install
 
-In your **~/.bashrc** or **~/.zshrc** or whatever rc file you use paste (prefably in the end of the file):
+In your **~/.bashrc** or **~/.zshrc** (or **~/.bash_profile** for bash on macOS) or whatever rc file you use paste (prefably in the end of the file):
 
 ```bash
 # START xxToolbelt
@@ -140,8 +142,29 @@ Reload your terminal.
 ### Install with wget
 
 ```bash
-cd "${TMPDIR:-/tmp}" && wget -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && echo -ne "# START xxToolbelt\nsource \"$HOME/.xxtoolbelt/xxtoolbelt.sh\"\n# END xxToolbelt" >> "$HOME/.$(basename "$(ps -p $$ -ocomm=)")rc" && source "$HOME/.$(basename "$(ps -p $$ -ocomm=)")rc" && xxtb --sync && echo -ne "\n\e[1;32m======= xxToolbelt was installed. Try 'xxtb'\e[m\n"
+cd "${TMPDIR:-/tmp}" && wget -O xxToolbelt.tar.gz https://github.com/thereisnotime/xxToolbelt/archive/main.tar.gz && tar -xf xxToolbelt.tar.gz && mkdir "$HOME/.xxtoolbelt" && mv ./xxToolbelt-main/* "$HOME/.xxtoolbelt" && case "${SHELL##*/}" in zsh) _rc="$HOME/.zshrc" ;; bash) if [ "$(uname -s)" = Darwin ]; then _rc="$HOME/.bash_profile"; else _rc="$HOME/.bashrc"; fi ;; *) _rc="$HOME/.${SHELL##*/}rc" ;; esac && printf '\n# START xxToolbelt\nsource "$HOME/.xxtoolbelt/xxtoolbelt.sh"\n# END xxToolbelt\n' >> "$_rc" && source "$HOME/.xxtoolbelt/xxtoolbelt.sh" && xxtb --sync && printf '\n\033[1;32m======= xxToolbelt was installed. Try xxtb\033[m\n'
 ```
+
+### macOS
+
+xxToolbelt works on macOS with the stock shells, no Homebrew required for the core:
+
+- **zsh** (the default shell): source `xxtoolbelt.sh` from `~/.zshrc` as above. Under zsh the file only adds `~/.local/bin` to PATH and defines an `xxtb` function that runs everything through bash, so the bash-only code never runs in zsh. This also means the very first `xxtb -s` works before anything is synced.
+- **bash**: Apple's `/bin/bash` 3.2 is fine. If Homebrew bash is first in PATH it's used instead (the `xxtb` wrapper uses `#!/usr/bin/env bash`).
+- **PATH**: macOS doesn't put `~/.local/bin` on PATH by default. Sourcing `xxtoolbelt.sh` adds it for your interactive shells. For anything else started from a login shell, add it to `~/.zprofile` (not `~/.zshenv`, `/etc/zprofile` runs `path_helper` afterwards and reorders PATH):
+
+  ```bash
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile
+  ```
+
+- **GUI apps** (editors, AI desktop apps, anything started from the Dock or Spotlight) don't read shell profiles. Either configure PATH per tool (see [Using with AI Tools](#using-with-ai-tools)) or set the launchd user PATH and reboot:
+
+  ```bash
+  sudo launchctl config user path "$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  ```
+
+- **Linux-only scripts**: scripts that need systemd, apt, iproute2 and so on can be marked with `# xxtb-os: linux` and sync will skip them on a Mac. See [OS-specific scripts](#os-specific-scripts).
+- **GNU tools**: scripts written against GNU coreutils (`sed -i`, `grep -P`, `date -d`, `readlink -f` on old macOS...) need either portable rewrites or `brew install coreutils gnu-sed grep` with the `gnubin` folders on PATH. The core itself doesn't need them.
 
 ## 🗑️ Uninstall
 
@@ -209,7 +232,7 @@ Example:
 
 ### Change default script editor
 
-Edit **XXTOOLBELT_SCRIPTS_EDITOR** in your RC file.
+Edit **XXTOOLBELT_SCRIPTS_EDITOR** in your RC file. `xxtb -o` opens the scripts folder with `open` on macOS or `xdg-open` on Linux, and falls back to this editor when neither is available.
 
 ### Change scripts folder
 
@@ -232,6 +255,27 @@ Files whose name starts with `_` are treated as shared libraries and are never s
 scripts/bash/_colors.sh       # sourced by other scripts, not callable directly
 scripts/python/_api_client.py # imported by other scripts
 ```
+
+### OS-specific scripts
+
+A script that only works on some operating systems can say so with a comment in its first 10 lines:
+
+```bash
+#!/usr/bin/env bash
+# xxtb-os: linux
+```
+
+The value is a comma separated list of OS names as reported by `uname -s`, lowercased (`linux`, `darwin`, `freebsd`...), with optional spaces after the commas:
+
+```bash
+# xxtb-os: linux, darwin
+```
+
+Languages that don't use `#` comments can use `// xxtb-os: linux` or `-- xxtb-os: linux`. No marker means the script is synced everywhere.
+
+On sync, scripts whose list doesn't include the current OS are skipped, and any symlink left over from an earlier sync is removed. The summary line tells you how many were skipped. Termux reports `linux`.
+
+To mark a whole language folder at once, put a `.xxtb-os` file in it containing the list (e.g. `linux`).
 
 ### Belts (External Toolbelts)
 
@@ -411,7 +455,7 @@ Add to `settings.json`:
 }
 ```
 
-#### Cron / Systemd
+#### Cron / Systemd / launchd
 
 ```bash
 # crontab
@@ -424,12 +468,25 @@ Environment="PATH=/home/youruser/.local/bin:/usr/bin:/bin"
 ExecStart=/home/youruser/.local/bin/xxmyscript
 ```
 
+On macOS, launchd agents get a minimal PATH as well. Set it in the plist:
+
+```xml
+<key>EnvironmentVariables</key>
+<dict>
+  <key>PATH</key>
+  <string>/Users/youruser/.local/bin:/usr/bin:/bin</string>
+</dict>
+```
+
 ## ⚙️ Compatability
 
-Should work fine with all POSIX compliant shells (and some of the not fully compliant ones). Tested with:
+The core needs bash 3.2 or newer to run (zsh users get a small shim that hands off to bash). Tested with:
 
-- Debian/Ubuntu/Arch/Manjaro
+- Debian/Ubuntu/Arch/Manjaro, Termux
+- macOS: bash 3.2 (`/bin/bash`) and zsh, covered by the CI smoke test on `macos-latest` (`tests/smoke.sh`), not yet tested by hand on a real Mac
 - bash/zsh
+
+Individual scripts are only as portable as you write them, see [OS-specific scripts](#os-specific-scripts).
 
 ## 🚀 Roadmap
 
@@ -446,7 +503,7 @@ Should work fine with all POSIX compliant shells (and some of the not fully comp
 - [ ] Add Dart.
 - [ ] Add Delphi.
 - [ ] Create dependency examples where they are missing.
-- [ ] Test on macOS.
+- [x] Test on macOS (CI smoke test on macos-latest).
 - [ ] Test on BSD.
 - [ ] Add support for PowerShell Core.
 - [x] Implement architecture that allows easy installation of "script modules" from git repositories by URL (Belts).
