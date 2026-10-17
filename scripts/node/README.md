@@ -13,8 +13,12 @@ I recommend using [asdf](https://asdf-vm.com/guide/getting-started.html) to mana
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 asdf install nodejs 22.2.0
 asdf global nodejs 22.2.0
-# You can link to a specific version just for the scripts in the shebang or use the global version like this
-sudo ln -s $(asdf which node 22.2.0) /usr/bin/node
+```
+
+The template uses `#!/usr/bin/env node`, so whatever `node` is first on your PATH is used. If you want to pin a version in the shebang instead, link it somewhere stable and point the shebang there (on macOS `/usr/bin` is read-only, use `/usr/local/bin`):
+
+```bash
+sudo ln -s "$(asdf which node 22.2.0)" /usr/local/bin/node22
 ```
 
 ## Examples

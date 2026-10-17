@@ -1,4 +1,5 @@
-#!/bin/bash 
+#!/usr/bin/env bash
+# xxtb-os: linux
 function xxnet-iptables-ls () {
     local version="1.1"
     function _xxiptables () {
