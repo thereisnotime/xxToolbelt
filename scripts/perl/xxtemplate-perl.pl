@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 my $total = $#ARGV + 1;
 my $counter = 1;
 my $scriptname = $0;
