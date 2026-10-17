@@ -20,13 +20,30 @@
 # TODO: Fix hack for dirty exit loops.
 # TODO: Add nice search mechanism.
 # TODO: Add fzf for faster selection of scripts when exporting.
-_SCRIPT_VERSION="2.5.4"
+_SCRIPT_VERSION="2.6.0"
 _SCRIPT_NAME="xxTB"
+
+#####################################
+#### zsh shim
+#####################################
+# The rest of this file is bash. Under zsh (macOS default) just put ~/.local/bin
+# on PATH and run every xxtb call through bash, then stop sourcing here.
+# Calling bash directly (not the ~/.local/bin/xxtb wrapper) means the very
+# first 'xxtb -s' works before any sync has happened.
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+	if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+		export PATH="$HOME/.local/bin:$PATH"
+	fi
+	function xxtb () {
+		command bash -c 'source "$1"; shift; xxtb "$@"' xxtb "$HOME/.xxtoolbelt/xxtoolbelt.sh" "$@"
+	}
+	return 0
+fi
 
 #####################################
 #### Configuration
 #####################################
-# NOTE: Editor used by 'xxtb -o' to open scripts folder.
+# NOTE: Fallback for 'xxtb -o' when there is no system opener (open/xdg-open).
 XXTOOLBELT_SCRIPTS_EDITOR="code"
 # NOTE The folder where the scripts are located.
 XXTOOLBELT_SCRIPTS_FOLDER="$HOME/.xxtoolbelt/scripts"
@@ -51,6 +68,20 @@ if [[ -f "$XXTOOLBELT_DEBUG_FLAG" ]]; then XXTOOLBELT_DEBUG_MODE=1; else XXTOOLB
 XXTOOLBELT_PRIVATE_KEYWORD=".private"
 XXTOOLBELT_MAIN_FILE="$XXTOOLBELT_SCRIPTS_FOLDER/../xxtoolbelt.sh"
 XXTOOLBELT_LOADED_SCRIPTS=0
+# NOTE: OS name used by the 'xxtb-os:' script filter, same as 'uname -s'
+# lowercased (linux, darwin, freebsd...). Termux reports linux. Derived from
+# $OSTYPE so the common cases don't fork uname on every shell start.
+# Set it beforehand to override.
+if [[ -z "${XXTOOLBELT_OS:-}" ]]; then
+	case "${OSTYPE:-}" in
+		darwin*) XXTOOLBELT_OS="darwin" ;;
+		linux*) XXTOOLBELT_OS="linux" ;;
+		freebsd*) XXTOOLBELT_OS="freebsd" ;;
+		openbsd*) XXTOOLBELT_OS="openbsd" ;;
+		netbsd*) XXTOOLBELT_OS="netbsd" ;;
+		*) XXTOOLBELT_OS="$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')" ;;
+	esac
+fi
 
 #####################################
 #### Helpers
@@ -72,7 +103,7 @@ bpurple='\e[1;35m'      # Purple
 bcyan='\e[1;36m'        # Cyan
 bwhite='\e[1;37m'       # White
 nc="\e[m"               # Color Reset
-function log() {
+function xxtb-log() {
     local _message="$1"
     local _level="$2"
     local _nl="\n"
@@ -103,14 +134,20 @@ function log() {
         ;;
     esac
 }
-function failure() {
+# NOTE: 'log' used to be the logger name. Keep it as an alias for anything that
+# relied on it, but never shadow an existing 'log' (your rc's own, or macOS's
+# /usr/bin/log).
+if ! declare -F log &>/dev/null && ! command -v log &>/dev/null; then
+	function log() { xxtb-log "$@"; }
+fi
+function xxtb-failure() {
     local _lineno="$2"
     local _fn="$3"
     local _exitstatus="$4"
     local _msg="$5"
     local _lineno_fns="${1% 0}"
     if [[ "$_lineno_fns" != "0" ]]; then _lineno="${_lineno} ${_lineno_fns}"; fi
-    log "Error in ${BASH_SOURCE[1]}:${_fn}[${_lineno}] Failed with status ${_exitstatus}: ${_msg}" "ERROR"
+    xxtb-log "Error in ${BASH_SOURCE[1]}:${_fn}[${_lineno}] Failed with status ${_exitstatus}: ${_msg}" "ERROR"
 }
 
 function xxtb_print_logo () {
@@ -162,12 +199,12 @@ function xxtb-belts-menu () {
 		4) clear ; xxtb-toggle-belt-interactive disable ; xxtb-belts-menu ;;
 		5) clear ; xxtb-remove-belt-interactive ; xxtb-belts-menu ;;
 		0) clear ; xxtb ;;
-		*) clear ; log "No such option." "ERROR" ; xxtb-belts-menu ;;
+		*) clear ; xxtb-log "No such option." "ERROR" ; xxtb-belts-menu ;;
 	esac
 }
 function xxtb_back_belts_menu () {
 	tput civis
-	log "\n\n${fwhite}<--- Press ENTER to go back.${nc}" "INFO"
+	xxtb-log "\n\n${fwhite}<--- Press ENTER to go back.${nc}" "INFO"
 	read -r -s
 	xxtb-belts-menu
 }
@@ -175,8 +212,8 @@ function xxtb-add-belt-interactive () {
 	echo -ne "\nEnter belt name: "
 	read -r belt_name
 	if [[ -z "$belt_name" ]]; then
-		log "Belt name cannot be empty." "ERROR"
-		log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+		xxtb-log "Belt name cannot be empty." "ERROR"
+		xxtb-log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
 		read -r -s
 		return 1
 	fi
@@ -192,24 +229,24 @@ function xxtb-add-belt-interactive () {
 			read -r belt_source
 			;;
 		*)
-			log "Invalid type. Use 'g' for git or 'l' for local." "ERROR"
-			log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+			xxtb-log "Invalid type. Use 'g' for git or 'l' for local." "ERROR"
+			xxtb-log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
 			read -r -s
 			return 1
 			;;
 	esac
 	if [[ -z "$belt_source" ]]; then
-		log "Source cannot be empty." "ERROR"
-		log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+		xxtb-log "Source cannot be empty." "ERROR"
+		xxtb-log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
 		read -r -s
 		return 1
 	fi
 	if xxtb-add-belt "$belt_name" "$belt_source"; then
-		log "Belt '$belt_name' added successfully." "INFO"
+		xxtb-log "Belt '$belt_name' added successfully." "INFO"
 	else
-		log "Failed to add belt '$belt_name'." "ERROR"
+		xxtb-log "Failed to add belt '$belt_name'." "ERROR"
 	fi
-	log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
+	xxtb-log "\n${fwhite}<--- Press ENTER to continue.${nc}" "INFO"
 	read -r -s
 }
 function xxtb-toggle-belt-interactive () {
@@ -218,7 +255,7 @@ function xxtb-toggle-belt-interactive () {
 	echo -ne "\nEnter belt name to $action: "
 	read -r belt_name
 	if [[ -z "$belt_name" ]]; then
-		log "Belt name cannot be empty." "ERROR"
+		xxtb-log "Belt name cannot be empty." "ERROR"
 		return 1
 	fi
 	if [[ "$action" == "enable" ]]; then
@@ -232,7 +269,7 @@ function xxtb-remove-belt-interactive () {
 	echo -ne "\nEnter belt name to remove: "
 	read -r belt_name
 	if [[ -z "$belt_name" ]]; then
-		log "Belt name cannot be empty." "ERROR"
+		xxtb-log "Belt name cannot be empty." "ERROR"
 		return 1
 	fi
 	echo -ne "Are you sure you want to remove '$belt_name'? (y/N): "
@@ -240,12 +277,12 @@ function xxtb-remove-belt-interactive () {
 	if [[ "$confirm" == "y" ]] || [[ "$confirm" == "Y" ]]; then
 		xxtb-remove-belt "$belt_name"
 	else
-		log "Cancelled." "INFO"
+		xxtb-log "Cancelled." "INFO"
 	fi
 }
 function xxtb_back_menu () {
 	tput civis
-	log "\n\n${fwhite}<--- Press ENTER to go back to the menu.${nc}" "INFO"
+	xxtb-log "\n\n${fwhite}<--- Press ENTER to go back to the menu.${nc}" "INFO"
 	read -r -s
 	clear
 	xxtb
@@ -326,7 +363,7 @@ function xxtb () {
 				return 0
 				;;
 			*)
-				log "No such option. Try help with xxtb --help" "ERROR"
+				xxtb-log "No such option. Try help with xxtb --help" "ERROR"
 				return 1
 		esac
 	done
@@ -337,43 +374,45 @@ function xxtb () {
 			echo -ne "\nYour choice: "
 			read -r a
 			case $a in
+				# NOTE: Every branch must end in a tail call back into the menu
+				# (or nothing), so that 0) can unwind the whole chain with return.
 				1) xxtb-open-folder ; clear; xxtb ;;
 				2) clear ; xxtb-list-scripts ; xxtb_back_menu ;;
-				3) clear ; xxtb-show-command-export-menu ; xxtb ;;
+				3) clear ; xxtb-show-command-export-menu ;;
 				4) xxtb-show-import-script-menu ; xxtb ;;
-				5) clear ; xxtb -h ; xxtb_back_menu ; xxtb ;;
+				5) clear ; xxtb -h ; xxtb_back_menu ;;
 				6) clear ; xxtb-sync ; xxtb_back_menu ;;
 				7) clear ; xxtb-toggle-debug ; xxtb ;;
 				8) clear ; xxtb-update ;;
 				9) xxtb-belts-menu ;;
-			0) kill $$ ;;
-			*) clear; log "No such option." "ERROR"; xxtb
+			0) tput cnorm ; return 0 ;;
+			*) clear; xxtb-log "No such option." "ERROR"; xxtb
 			esac
 }
 function xxtb-reload () {
-	log "xxToolbelt v$_SCRIPT_VERSION" "INFO"
+	xxtb-log "xxToolbelt v$_SCRIPT_VERSION" "INFO"
 	source "$XXTOOLBELT_MAIN_FILE"
 }
-function b-show-import-script-menu () {
+function xxtb-show-import-script-menu () {
 	clear
 	echo -ne "\nPaste command: "
 	read -r EXPORTED
 	if ! [[ $EXPORTED == *"XXTBIMPORT"* ]]; then
-		log "This does not seem like an import command." "ERROR"
+		xxtb-log "This does not seem like an import command." "ERROR"
 		return 1
 	fi
 	# TODO: Fix this quick hack.
-	import_command=$(echo "$EXPORTED" | grep -m 1 -o -P '(?<=XXTBIMPORT=).*(?=; mkdir)' )
+	import_command=$(echo "$EXPORTED" | sed -n 's/.*XXTBIMPORT=\([^;]*\); mkdir.*/\1/p' | head -n 1)
 	eval "$EXPORTED"
 	if [ $? -eq 0 ]; then
-		log "Import successfull. Give it a try: $import_command" "INFO"
+		xxtb-log "Import successfull. Give it a try: $import_command" "INFO"
 	else
-		log "Error while importing." "ERROR"
+		xxtb-log "Error while importing." "ERROR"
 	fi
 }
 function xxtb-update () {
 	# Update xxToolbelt core
-	log "Updating xxToolbelt core..." "INFO"
+	xxtb-log "Updating xxToolbelt core..." "INFO"
 	local _core_dir
 	_core_dir="$(dirname "$XXTOOLBELT_MAIN_FILE")"
 	local _core_old_head=""
@@ -383,8 +422,8 @@ function xxtb-update () {
 		local _core_incoming
 		_core_incoming=$(git -C "$_core_dir" log HEAD..origin/main --oneline 2>/dev/null)
 		if [[ -n "$_core_incoming" ]]; then
-			log "Core changes incoming:" "INFO"
-			while IFS= read -r line; do log "  $line" "INFO"; done <<< "$_core_incoming"
+			xxtb-log "Core changes incoming:" "INFO"
+			while IFS= read -r line; do xxtb-log "  $line" "INFO"; done <<< "$_core_incoming"
 		fi
 	fi
 	update_url="https://raw.githubusercontent.com/thereisnotime/xxToolbelt/main/xxtoolbelt.sh"
@@ -394,7 +433,7 @@ function xxtb-update () {
 		if [ -x "$(command -v wget)" ]; then
 			wget "$update_url" -O "$XXTOOLBELT_MAIN_FILE"
 		else
-			log "You need curl or wget for this." "ERROR"
+			xxtb-log "You need curl or wget for this." "ERROR"
 			return 1
 		fi
 	fi
@@ -407,13 +446,22 @@ function xxtb-update () {
 	xxtb-sync
 }
 function xxtb-open-folder () {
-	xdg-open "$XXTOOLBELT_SCRIPTS_FOLDER" 
+	if [[ "$XXTOOLBELT_OS" == "darwin" ]] && command -v open &>/dev/null; then
+		open "$XXTOOLBELT_SCRIPTS_FOLDER"
+	elif command -v xdg-open &>/dev/null; then
+		xdg-open "$XXTOOLBELT_SCRIPTS_FOLDER"
+	elif [[ -n "$XXTOOLBELT_SCRIPTS_EDITOR" ]] && command -v "$XXTOOLBELT_SCRIPTS_EDITOR" &>/dev/null; then
+		"$XXTOOLBELT_SCRIPTS_EDITOR" "$XXTOOLBELT_SCRIPTS_FOLDER"
+	else
+		xxtb-log "No way to open folders found (open/xdg-open/$XXTOOLBELT_SCRIPTS_EDITOR). Scripts are in: $XXTOOLBELT_SCRIPTS_FOLDER" "WARN"
+		return 1
+	fi
 }
 function xxtb-export () {
 	script_name="$1"
 	file_path=$(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -name "$script_name.*")
 	if ! [ -f "$file_path" ]; then
-		log "No such script was found: $script_name" "ERROR"
+		xxtb-log "No such script was found: $script_name" "ERROR"
 		return 1
 	fi 
 	file_name=$(basename -- "$file_path")
@@ -423,7 +471,7 @@ function xxtb-export () {
 	file_folder=${file_path//$XXTOOLBELT_SCRIPTS_FOLDER}
 	file_folder=${file_folder//$file_name.$file_extension}
 	file_command=${file_name//$XXTOOLBELT_PRIVATE_KEYWORD}
-	log "To import the script paste in terminal or in the xxTB import menu the following:\n" "INFO"
+	xxtb-log "To import the script paste in terminal or in the xxTB import menu the following:\n" "INFO"
 	export_command=XXTBIMPORT="$file_command; mkdir -p \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder\" || true; if [[ -f \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\" ]]; then echo \"ERROR: File already exists.\"; fi; echo \"$file_content\" | base64 --decode >> \"\$XXTOOLBELT_SCRIPTS_FOLDER$file_folder$file_name.$file_extension\"; xxtb-sync;"
 	export_command=$(echo "$export_command" | tr -d '\n')
 	echo -ne "${bblue}$export_command${nc}\n"
@@ -442,11 +490,11 @@ function xxtb-toggle-debug () {
 	if [[ "$XXTOOLBELT_DEBUG_MODE" == 1 ]]; then
 		XXTOOLBELT_DEBUG_MODE=0
 		rm -f "$XXTOOLBELT_DEBUG_FLAG" &> /dev/null
-		log "Debug mode set to OFF" "INFO"
+		xxtb-log "Debug mode set to OFF" "INFO"
 	else
 		XXTOOLBELT_DEBUG_MODE=1
 		touch "$XXTOOLBELT_DEBUG_FLAG" &> /dev/null
-		log "Debug mode set to ON" "INFO"
+		xxtb-log "Debug mode set to ON" "INFO"
 	fi
 }
 function xxtb-list-scripts () {
@@ -458,11 +506,59 @@ function xxtb-list-scripts () {
 		filename="${filename%.*}"
 		if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
 			filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
-			log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
+			xxtb-log "Script $XXTOOLBELT_LOADED_SCRIPTS | Command: ${bred}$filename${nc}${fgreen} | Source: ${bwhite}$file${nc}" "INFO"
 			((XXTOOLBELT_LOADED_SCRIPTS+=1))
 		fi
 	done < <(find -L "$XXTOOLBELT_SCRIPTS_FOLDER" -mindepth 2 -maxdepth "$XXTOOLBELT_SCANNING_DEPTH" -type f -print0)
-	log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
+	xxtb-log "Total: $XXTOOLBELT_LOADED_SCRIPTS scripts." "INFO"
+}
+function xxtb-os-in-list () {
+	# xxtb-os-in-list <list> - true if XXTOOLBELT_OS is in a space/comma separated list.
+	# 'macos' is accepted as an alias for 'darwin'. An empty list matches everything.
+	local _os _list="${1//,/ }" _oses
+	_list="${_list//$'\r'/}"
+	[[ -z "${_list// /}" ]] && return 0
+	# NOTE: read -a instead of an unquoted for loop, so a stray '*/' doesn't glob.
+	read -r -a _oses <<< "$_list"
+	for _os in "${_oses[@]}"; do
+		[[ "$_os" == "macos" ]] && _os="darwin"
+		[[ "$_os" == "$XXTOOLBELT_OS" ]] && return 0
+	done
+	return 1
+}
+function xxtb-os-allowed () {
+	# xxtb-os-allowed <file> [folder_os_list]
+	# A script can limit itself to some OSes with a comment in its first 10 lines,
+	# a comma separated list of 'uname -s' names in lowercase:
+	#   # xxtb-os: linux
+	#   # xxtb-os: linux, darwin
+	# Languages without '#' comments can use '// xxtb-os:' or '-- xxtb-os:'.
+	# A '.xxtb-os' file in the language folder does the same for all scripts in it.
+	# No marker means the script syncs everywhere. Called for every script on
+	# every sync, so it only uses builtins.
+	local _file="$1" _folder_list="$2" _line _i=0
+	if [[ -n "$_folder_list" ]] && ! xxtb-os-in-list "$_folder_list"; then
+		return 1
+	fi
+	while [[ $_i -lt 10 ]] && IFS= read -r _line; do
+		((_i+=1))
+		if [[ "$_line" == *"xxtb-os:"* ]]; then
+			xxtb-os-in-list "${_line#*xxtb-os:}"
+			return $?
+		fi
+	done < "$_file"
+	return 0
+}
+function xxtb-folder-os-list () {
+	# xxtb-folder-os-list <folder> - prints the contents of <folder>/.xxtb-os, if any.
+	[[ -f "${1%/}/.xxtb-os" ]] && tr '\n' ' ' < "${1%/}/.xxtb-os"
+	return 0
+}
+function xxtb-unlink-if-ours () {
+	# xxtb-unlink-if-ours <file> <link> - drop a link left over from before a script was OS-filtered.
+	if [[ -L "$2" ]] && [[ "$(readlink "$2")" == "$1" ]]; then
+		rm -f "$2"
+	fi
 }
 function xxtb-sync () {
 	# Symlink-based script loading - works in all contexts (interactive shell, AI tools, scripts)
@@ -479,7 +575,7 @@ function xxtb-sync () {
 		if { [[ "$target" == "$XXTOOLBELT_SCRIPTS_FOLDER"* ]] || [[ "$target" == "$XXTOOLBELT_BELTS_FOLDER"* ]]; } && [[ ! -e "$link" ]]; then
 			rm -f "$link"
 			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
-				log "Removed stale symlink: $(basename "$link")" "DEBUG"
+				xxtb-log "Removed stale symlink: $(basename "$link")" "DEBUG"
 			fi
 			((_cleaned+=1))
 		fi
@@ -487,10 +583,12 @@ function xxtb-sync () {
 
 	# Phase 2: Create/update symlinks for current scripts (core only, skip belt symlinks)
 	XXTOOLBELT_LOADED_SCRIPTS=0
+	local _skipped=0 _folder_os
 	for dir in "$XXTOOLBELT_SCRIPTS_FOLDER"/*/; do
 		[[ -d "$dir" ]] || continue
 		# Skip symlinked directories (those are belt directories)
 		[[ -L "${dir%/}" ]] && continue
+		_folder_os=$(xxtb-folder-os-list "$dir")
 		while IFS= read -r -d '' file; do
 			filename=$(basename -- "$file")
 			extension="${filename##*.}"
@@ -500,11 +598,20 @@ function xxtb-sync () {
 				if [[ "$filename" == _* ]]; then
 					continue
 				fi
-				if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
 				filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
+				# Skip scripts marked for other OSes (xxtb-os: ...)
+				if ! xxtb-os-allowed "$file" "$_folder_os"; then
+					xxtb-unlink-if-ours "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
+					if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
+						xxtb-log "Skipped (not for $XXTOOLBELT_OS): $filename" "DEBUG"
+					fi
+					((_skipped+=1))
+					continue
+				fi
+				if ! [[ -x "$file" ]]; then chmod +x "$file"; fi
 				ln -sf "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
 				if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
-					log "Synced: $filename(.$extension) -> $file" "DEBUG"
+					xxtb-log "Synced: $filename(.$extension) -> $file" "DEBUG"
 				fi
 				((XXTOOLBELT_LOADED_SCRIPTS+=1))
 			fi
@@ -522,21 +629,26 @@ WRAPPER
 	chmod +x "$_xxtb_wrapper"
 
 	# Phase 3: Sync belt scripts
-	local _belt_result _belt_count _belt_scripts
+	local _belt_result _belt_count _belt_scripts _belt_skipped _skipped_msg=""
 	_belt_result=$(xxtb-sync-belts)
 	_belt_count=$(echo "$_belt_result" | cut -d' ' -f1)
 	_belt_scripts=$(echo "$_belt_result" | cut -d' ' -f2)
+	_belt_skipped=$(echo "$_belt_result" | cut -d' ' -f3)
+	((_skipped+=${_belt_skipped:-0}))
+	if [[ "$_skipped" -gt 0 ]]; then
+		_skipped_msg=" skipped $_skipped not meant for $XXTOOLBELT_OS,"
+	fi
 
 	if [[ "$_belt_count" -gt 0 ]]; then
-		log "Synced $XXTOOLBELT_LOADED_SCRIPTS core + $_belt_scripts scripts from $_belt_count belt(s), cleaned $_cleaned stale links." "INFO"
+		xxtb-log "Synced $XXTOOLBELT_LOADED_SCRIPTS core + $_belt_scripts scripts from $_belt_count belt(s),$_skipped_msg cleaned $_cleaned stale links." "INFO"
 	else
-		log "Synced $XXTOOLBELT_LOADED_SCRIPTS scripts, cleaned $_cleaned stale links." "INFO"
+		xxtb-log "Synced $XXTOOLBELT_LOADED_SCRIPTS scripts,$_skipped_msg cleaned $_cleaned stale links." "INFO"
 	fi
 }
 
 # Legacy alias for backwards compatibility
 function xxtb-load () {
-	log "xxtb-load is deprecated, use xxtb-sync instead." "WARN"
+	xxtb-log "xxtb-load is deprecated, use xxtb-sync instead." "WARN"
 	xxtb-sync
 }
 
@@ -548,43 +660,43 @@ function xxtb-add-belt () {
 	local source="$2"
 
 	if [[ -z "$name" ]] || [[ -z "$source" ]]; then
-		log "Usage: xxtb -a <name> <git-url|local-path>" "ERROR"
+		xxtb-log "Usage: xxtb -a <name> <git-url|local-path>" "ERROR"
 		return 1
 	fi
 
 	# Check if belt already exists
 	if [[ -f "$XXTOOLBELT_BELTS_FILE" ]] && grep -q "^${name}|" "$XXTOOLBELT_BELTS_FILE"; then
-		log "Belt '$name' already exists. Remove it first with: xxtb --remove-belt $name" "ERROR"
+		xxtb-log "Belt '$name' already exists. Remove it first with: xxtb --remove-belt $name" "ERROR"
 		return 1
 	fi
 
 	# Determine if source is local path or git URL
-	if [[ "$source" == /* ]] || [[ "$source" == ~* ]]; then
+	if [[ "$source" == /* ]] || [[ "$source" == "~"* ]]; then
 		# Local path - expand tilde if present
 		source="${source/#\~/$HOME}"
 		if [[ ! -d "$source" ]]; then
-			log "Local path does not exist: $source" "ERROR"
+			xxtb-log "Local path does not exist: $source" "ERROR"
 			return 1
 		fi
-		log "Registering local belt '$name' from $source" "INFO"
+		xxtb-log "Registering local belt '$name' from $source" "INFO"
 	else
 		# Git URL - clone to belts folder
 		mkdir -p "$XXTOOLBELT_BELTS_FOLDER"
 		local target_dir="$XXTOOLBELT_BELTS_FOLDER/$name"
 		if [[ -d "$target_dir" ]]; then
-			log "Directory already exists: $target_dir" "ERROR"
+			xxtb-log "Directory already exists: $target_dir" "ERROR"
 			return 1
 		fi
-		log "Cloning belt '$name' from $source..." "INFO"
+		xxtb-log "Cloning belt '$name' from $source..." "INFO"
 		if ! git clone "$source" "$target_dir"; then
-			log "Failed to clone repository" "ERROR"
+			xxtb-log "Failed to clone repository" "ERROR"
 			return 1
 		fi
 	fi
 
 	# Register the belt
 	echo "${name}|${source}" >> "$XXTOOLBELT_BELTS_FILE"
-	log "Belt '$name' added successfully." "INFO"
+	xxtb-log "Belt '$name' added successfully." "INFO"
 
 	# Sync to create symlinks
 	xxtb-sync
@@ -592,11 +704,11 @@ function xxtb-add-belt () {
 
 function xxtb-list-belts () {
 	if [[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] || [[ ! -s "$XXTOOLBELT_BELTS_FILE" ]]; then
-		log "No belts registered. Add one with: xxtb -a <name> <git-url|local-path>" "INFO"
+		xxtb-log "No belts registered. Add one with: xxtb -a <name> <git-url|local-path>" "INFO"
 		return 0
 	fi
 
-	log "Registered belts:" "INFO"
+	xxtb-log "Registered belts:" "INFO"
 	while IFS='|' read -r name source; do
 		[[ -z "$name" ]] && continue
 		# Check if disabled (starts with #)
@@ -607,7 +719,7 @@ function xxtb-list-belts () {
 		fi
 		# Determine belt location
 		local location
-		if [[ "$source" == /* ]] || [[ "$source" == ~* ]]; then
+		if [[ "$source" == /* ]] || [[ "$source" == "~"* ]]; then
 			location="${source/#\~/$HOME}"
 			if [[ "$disabled" -eq 1 ]]; then
 				echo -e "  ${fred}$name${nc} (local, disabled) -> $location"
@@ -640,12 +752,12 @@ function xxtb-remove-belt () {
 	local name="$1"
 
 	if [[ -z "$name" ]]; then
-		log "Usage: xxtb --remove-belt <name>" "ERROR"
+		xxtb-log "Usage: xxtb --remove-belt <name>" "ERROR"
 		return 1
 	fi
 
 	if [[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] || ! grep -q "^${name}|" "$XXTOOLBELT_BELTS_FILE"; then
-		log "Belt '$name' not found." "ERROR"
+		xxtb-log "Belt '$name' not found." "ERROR"
 		return 1
 	fi
 
@@ -655,7 +767,7 @@ function xxtb-remove-belt () {
 
 	# Remove symlinks for this belt
 	local belt_location
-	if [[ "$source" == /* ]] || [[ "$source" == ~* ]]; then
+	if [[ "$source" == /* ]] || [[ "$source" == "~"* ]]; then
 		belt_location="${source/#\~/$HOME}"
 	else
 		belt_location="$XXTOOLBELT_BELTS_FOLDER/$name"
@@ -669,15 +781,15 @@ function xxtb-remove-belt () {
 		target=$(readlink "$link")
 		if [[ "$target" == "$belt_location"* ]]; then
 			rm -f "$link"
-			log "Removed symlink: $(basename "$link")" "DEBUG"
+			xxtb-log "Removed symlink: $(basename "$link")" "DEBUG"
 		fi
 	done
 
 	# Remove cloned directory if it's a git belt
-	if [[ ! "$source" == /* ]] && [[ ! "$source" == ~* ]]; then
+	if [[ ! "$source" == /* ]] && [[ ! "$source" == "~"* ]]; then
 		if [[ -n "$name" ]] && [[ -d "${XXTOOLBELT_BELTS_FOLDER:?}/${name:?}" ]]; then
 			rm -rf "${XXTOOLBELT_BELTS_FOLDER:?}/${name:?}"
-			log "Removed cloned directory: $XXTOOLBELT_BELTS_FOLDER/$name" "INFO"
+			xxtb-log "Removed cloned directory: $XXTOOLBELT_BELTS_FOLDER/$name" "INFO"
 		fi
 	fi
 
@@ -686,31 +798,34 @@ function xxtb-remove-belt () {
 	grep -v "^${name}|" "$XXTOOLBELT_BELTS_FILE" > "$XXTOOLBELT_BELTS_FILE.tmp"
 	command mv -f "$XXTOOLBELT_BELTS_FILE.tmp" "$XXTOOLBELT_BELTS_FILE"
 
-	log "Belt '$name' removed successfully." "INFO"
+	xxtb-log "Belt '$name' removed successfully." "INFO"
 }
 
 function xxtb-disable-belt () {
 	local name="$1"
 
 	if [[ -z "$name" ]]; then
-		log "Usage: xxtb --disable-belt <name>" "ERROR"
+		xxtb-log "Usage: xxtb --disable-belt <name>" "ERROR"
 		return 1
 	fi
 
 	if [[ ! -f "$XXTOOLBELT_BELTS_FILE" ]]; then
-		log "No belts registered." "ERROR"
+		xxtb-log "No belts registered." "ERROR"
 		return 1
 	fi
 
 	# Check if belt exists and is enabled
 	if grep -q "^${name}|" "$XXTOOLBELT_BELTS_FILE"; then
-		sed -i "s/^${name}|/#${name}|/" "$XXTOOLBELT_BELTS_FILE"
-		log "Belt '$name' disabled." "INFO"
+		# NOTE: No 'sed -i', its syntax differs between GNU and BSD/macOS sed.
+		rm -f "$XXTOOLBELT_BELTS_FILE.tmp"
+		sed "s/^${name}|/#${name}|/" "$XXTOOLBELT_BELTS_FILE" > "$XXTOOLBELT_BELTS_FILE.tmp"
+		command mv -f "$XXTOOLBELT_BELTS_FILE.tmp" "$XXTOOLBELT_BELTS_FILE"
+		xxtb-log "Belt '$name' disabled." "INFO"
 		xxtb-sync
 	elif grep -q "^#${name}|" "$XXTOOLBELT_BELTS_FILE"; then
-		log "Belt '$name' is already disabled." "WARN"
+		xxtb-log "Belt '$name' is already disabled." "WARN"
 	else
-		log "Belt '$name' not found." "ERROR"
+		xxtb-log "Belt '$name' not found." "ERROR"
 		return 1
 	fi
 }
@@ -719,24 +834,26 @@ function xxtb-enable-belt () {
 	local name="$1"
 
 	if [[ -z "$name" ]]; then
-		log "Usage: xxtb --enable-belt <name>" "ERROR"
+		xxtb-log "Usage: xxtb --enable-belt <name>" "ERROR"
 		return 1
 	fi
 
 	if [[ ! -f "$XXTOOLBELT_BELTS_FILE" ]]; then
-		log "No belts registered." "ERROR"
+		xxtb-log "No belts registered." "ERROR"
 		return 1
 	fi
 
 	# Check if belt exists and is disabled
 	if grep -q "^#${name}|" "$XXTOOLBELT_BELTS_FILE"; then
-		sed -i "s/^#${name}|/${name}|/" "$XXTOOLBELT_BELTS_FILE"
-		log "Belt '$name' enabled." "INFO"
+		rm -f "$XXTOOLBELT_BELTS_FILE.tmp"
+		sed "s/^#${name}|/${name}|/" "$XXTOOLBELT_BELTS_FILE" > "$XXTOOLBELT_BELTS_FILE.tmp"
+		command mv -f "$XXTOOLBELT_BELTS_FILE.tmp" "$XXTOOLBELT_BELTS_FILE"
+		xxtb-log "Belt '$name' enabled." "INFO"
 		xxtb-sync
 	elif grep -q "^${name}|" "$XXTOOLBELT_BELTS_FILE"; then
-		log "Belt '$name' is already enabled." "WARN"
+		xxtb-log "Belt '$name' is already enabled." "WARN"
 	else
-		log "Belt '$name' not found." "ERROR"
+		xxtb-log "Belt '$name' not found." "ERROR"
 		return 1
 	fi
 }
@@ -750,7 +867,7 @@ function xxtb-ensure-venv () {
 	local req_file="$2"
 
 	if [[ -z "$venv_path" ]] || [[ -z "$req_file" ]]; then
-		log "xxtb-ensure-venv: missing args" "ERR" >&2
+		xxtb-log "xxtb-ensure-venv: missing args" "ERR" >&2
 		return 1
 	fi
 
@@ -773,30 +890,30 @@ function xxtb-ensure-venv () {
 		# uv: create venv if missing, then sync requirements
 		if [[ ! -d "$venv_path" ]]; then
 			"$_uv" venv "$venv_path" &>/dev/null || {
-				log "uv venv creation failed: $venv_path" "ERR" >&2
+				xxtb-log "uv venv creation failed: $venv_path" "ERR" >&2
 				return 1
 			}
 		fi
 		local _uv_out
 		_uv_out=$("$_uv" pip install -q --python "$venv_path/bin/python3" -r "$req_file" 2>&1) || {
-			log "uv pip install failed for: $req_file" "ERR" >&2
-			[[ -n "$_uv_out" ]] && log "$_uv_out" "ERR" >&2
+			xxtb-log "uv pip install failed for: $req_file" "ERR" >&2
+			[[ -n "$_uv_out" ]] && xxtb-log "$_uv_out" "ERR" >&2
 			return 1
 		}
 	else
 		# Fallback: python3 -m venv + pip
 		if ! command -v python3 &>/dev/null; then
-			log "python3 not found, skipping venv for: $req_file" "WARN" >&2
+			xxtb-log "python3 not found, skipping venv for: $req_file" "WARN" >&2
 			return 0
 		fi
 		if [[ ! -d "$venv_path" ]]; then
 			python3 -m venv "$venv_path" &>/dev/null || {
-				log "python3 -m venv failed: $venv_path" "ERR" >&2
+				xxtb-log "python3 -m venv failed: $venv_path" "ERR" >&2
 				return 1
 			}
 		fi
 		"$venv_path/bin/pip" install -q -r "$req_file" &>/dev/null || {
-			log "pip install failed for: $req_file" "ERR" >&2
+			xxtb-log "pip install failed for: $req_file" "ERR" >&2
 			return 1
 		}
 	fi
@@ -804,11 +921,13 @@ function xxtb-ensure-venv () {
 
 function xxtb-sync-belts () {
 	# Sync scripts from all registered belts
-	# Returns: "<belt_count> <script_count>"
-	[[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] && echo "0 0" && return 0
+	# Returns: "<belt_count> <script_count> <skipped_count>"
+	[[ ! -f "$XXTOOLBELT_BELTS_FILE" ]] && echo "0 0 0" && return 0
 
 	local _belt_count=0
 	local _belt_scripts=0
+	local _belt_skipped=0
+	local _folder_os
 	XXTOOLBELT_BIN_FOLDER="$HOME/.local/bin"
 
 	while IFS='|' read -r name source; do
@@ -818,7 +937,7 @@ function xxtb-sync-belts () {
 
 		# Determine belt location
 		local location
-		if [[ "$source" == /* ]] || [[ "$source" == ~* ]]; then
+		if [[ "$source" == /* ]] || [[ "$source" == "~"* ]]; then
 			location="${source/#\~/$HOME}"
 		else
 			location="$XXTOOLBELT_BELTS_FOLDER/$name"
@@ -840,24 +959,24 @@ function xxtb-sync-belts () {
 			ln -sfn "$folder" "$XXTOOLBELT_SCRIPTS_FOLDER/$symlink_name"
 
 			if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
-				log "Belt symlink: $symlink_name -> $folder" "DEBUG"
+				xxtb-log "Belt symlink: $symlink_name -> $folder" "DEBUG"
 			fi
 
 			# Auto-create/sync Python venv if requirements.txt exists
 			if [[ -f "${folder}requirements.txt" ]]; then
 				if [[ -f "${folder}.shared-venv" ]]; then
 					# Opt-in shared venv — warn so conflicts are visible
-					log "Belt '$name' uses shared venv ($XXTOOLBELT_SHARED_VENV)" "INFO" >&2
+					xxtb-log "Belt '$name' uses shared venv ($XXTOOLBELT_SHARED_VENV)" "INFO" >&2
 					if ! command -v uv &>/dev/null; then
-						log "uv not found — install uv for faster syncs (falling back to pip)" "WARN" >&2
+						xxtb-log "uv not found — install uv for faster syncs (falling back to pip)" "WARN" >&2
 					fi
 					xxtb-ensure-venv "$XXTOOLBELT_SHARED_VENV" "${folder}requirements.txt"
 				else
 					# Per-belt isolated venv (default); re-sync if requirements.txt is newer
 					if [[ ! -d "${folder}.venv" ]] || [[ "${folder}requirements.txt" -nt "${folder}.venv" ]]; then
-						log "Syncing venv for belt folder: $symlink_name" "INFO" >&2
+						xxtb-log "Syncing venv for belt folder: $symlink_name" "INFO" >&2
 						if ! command -v uv &>/dev/null; then
-							log "uv not found — install uv for faster syncs (falling back to pip)" "WARN" >&2
+							xxtb-log "uv not found — install uv for faster syncs (falling back to pip)" "WARN" >&2
 						fi
 						xxtb-ensure-venv "${folder}.venv" "${folder}requirements.txt"
 					fi
@@ -865,6 +984,7 @@ function xxtb-sync-belts () {
 			fi
 
 			# Scan folder for scripts and symlink to bin
+			_folder_os=$(xxtb-folder-os-list "$folder")
 			while IFS= read -r -d '' file; do
 				local filename
 				filename=$(basename -- "$file")
@@ -873,11 +993,20 @@ function xxtb-sync-belts () {
 				if [[ " ${XXTOOLBELT_SCRIPTS_WHITELIST[*]} " =~  ${extension}  ]]; then
 					# Skip library files (starting with _)
 					[[ "$filename" == _* ]] && continue
-					[[ ! -x "$file" ]] && chmod +x "$file"
 					filename=$(echo "$filename" | sed "s@$XXTOOLBELT_PRIVATE_KEYWORD@@")
+					# Skip scripts marked for other OSes (xxtb-os: ...)
+					if ! xxtb-os-allowed "$file" "$_folder_os"; then
+						xxtb-unlink-if-ours "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
+						if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
+							xxtb-log "Belt skipped (not for $XXTOOLBELT_OS): $filename" "DEBUG"
+						fi
+						((_belt_skipped+=1))
+						continue
+					fi
+					[[ ! -x "$file" ]] && chmod +x "$file"
 					ln -sf "$file" "$XXTOOLBELT_BIN_FOLDER/$filename"
 					if [ "$XXTOOLBELT_DEBUG_MODE" -eq 1 ]; then
-						log "Belt script: $filename -> $file" "DEBUG"
+						xxtb-log "Belt script: $filename -> $file" "DEBUG"
 					fi
 					((_belt_scripts+=1))
 				fi
@@ -885,7 +1014,7 @@ function xxtb-sync-belts () {
 		done
 	done < "$XXTOOLBELT_BELTS_FILE"
 
-	echo "$_belt_count $_belt_scripts"
+	echo "$_belt_count $_belt_scripts $_belt_skipped"
 }
 
 function xxtb-update-belts () {
@@ -899,13 +1028,13 @@ function xxtb-update-belts () {
 		local belt_dir="$XXTOOLBELT_BELTS_FOLDER/$name"
 
 		# Local path belt: rsync source into belt dir
-		if [[ "$source" == /* ]] || [[ "$source" == ~* ]]; then
+		if [[ "$source" == /* ]] || [[ "$source" == "~"* ]]; then
 			local expanded_source="${source/#\~/$HOME}"
 			if [[ ! -e "$expanded_source" ]]; then
-				log "Local belt '$name': source '$expanded_source' not found, skipping" "WARN"
+				xxtb-log "Local belt '$name': source '$expanded_source' not found, skipping" "WARN"
 				continue
 			fi
-			log "Syncing local belt '$name' from '$expanded_source'..." "INFO"
+			xxtb-log "Syncing local belt '$name' from '$expanded_source'..." "INFO"
 			if [[ -d "$expanded_source" ]]; then
 				rsync -a --delete "$expanded_source"/ "$belt_dir"/
 			else
@@ -916,28 +1045,28 @@ function xxtb-update-belts () {
 
 		# Git-based belt: stash local changes, pull, pop stash
 		if [[ -d "$belt_dir/.git" ]]; then
-			log "Updating belt '$name'..." "INFO"
+			xxtb-log "Updating belt '$name'..." "INFO"
 			local _old_head
 			_old_head=$(git -C "$belt_dir" rev-parse HEAD 2>/dev/null)
 			(
 				cd "$belt_dir" || exit 1
 				local _stashed=false
 				if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
-					log "Stashing local changes in '$name'..." "DEBUG"
+					xxtb-log "Stashing local changes in '$name'..." "DEBUG"
 					git stash push -q --include-untracked && _stashed=true
 				fi
 				if ! git pull --rebase 2>/dev/null; then
-					log "Pull failed for '$name', aborting rebase..." "WARN"
+					xxtb-log "Pull failed for '$name', aborting rebase..." "WARN"
 					git rebase --abort 2>/dev/null
 				fi
 				if [[ "$_stashed" == true ]]; then
-					git stash pop -q 2>/dev/null || log "Stash pop failed for '$name' — check manually" "WARN"
+					git stash pop -q 2>/dev/null || xxtb-log "Stash pop failed for '$name' — check manually" "WARN"
 				fi
 			)
 			local _new_commits
 			_new_commits=$(git -C "$belt_dir" log "${_old_head}..HEAD" --oneline 2>/dev/null)
 			if [[ -n "$_new_commits" ]]; then
-				while IFS= read -r line; do log "  $line" "INFO"; done <<< "$_new_commits"
+				while IFS= read -r line; do xxtb-log "  $line" "INFO"; done <<< "$_new_commits"
 			fi
 		fi
 	done < "$XXTOOLBELT_BELTS_FILE"

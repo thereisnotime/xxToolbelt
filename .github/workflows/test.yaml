@@ -1,0 +1,59 @@
+name: "Smoke Test"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install zsh and shellcheck (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh shellcheck
+
+      - name: Install shellcheck (macOS)
+        if: runner.os == 'macOS'
+        run: command -v shellcheck || brew install shellcheck
+
+      - name: ShellCheck
+        run: shellcheck xxtoolbelt.sh tests/smoke.sh
+
+      - name: Smoke test, bash
+        run: tests/smoke.sh bash
+
+      - name: Smoke test, zsh
+        run: tests/smoke.sh zsh
+
+      # Runners ship Homebrew bash 5. Put /bin first so the test itself, the
+      # xxtb wrapper and the zsh shim all run on Apple's bash 3.2, like a stock Mac.
+      - name: Smoke test, Apple bash 3.2 and zsh
+        if: runner.os == 'macOS'
+        run: |
+          export PATH="/bin:/usr/bin:/usr/sbin:/sbin:$PATH"
+          /bin/bash --version | head -n 1
+          /bin/bash tests/smoke.sh /bin/bash
+          /bin/bash tests/smoke.sh /bin/zsh
+
+      - name: Smoke test, fake other OS
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            XXTOOLBELT_OS=linux tests/smoke.sh bash
+          else
+            XXTOOLBELT_OS=darwin tests/smoke.sh bash
+          fi
