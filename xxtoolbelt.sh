@@ -884,7 +884,9 @@ function xxtb-ensure-venv () {
 	if command -v asdf &>/dev/null; then
 		_uv=$(asdf which uv 2>/dev/null) || true
 	fi
-	[[ -z "$_uv" ]] && _uv=$(command -v uv 2>/dev/null) || true
+	if [[ -z "$_uv" ]]; then
+		_uv=$(command -v uv 2>/dev/null) || true
+	fi
 
 	if [[ -n "$_uv" ]]; then
 		# uv: create venv if missing, then sync requirements
